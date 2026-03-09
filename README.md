@@ -3,13 +3,25 @@
 **Wigner Function Dynamics and Atom-Field Entanglement in the Jaynes-Cummings Model**
 
 <p align="center">
-  <img src="paper/figures/banner_qsol_light_new.png" width="100%">
+  <img src="banner_qsol_light_new.png" width="100%">
 </p>
 
 [![arXiv](https://img.shields.io/badge/arXiv-XXXX.XXXXX-b31b1b.svg)](https://arxiv.org/abs/XXXX.XXXXX)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![QuTiP 5.2](https://img.shields.io/badge/QuTiP-5.2-green.svg)](https://qutip.org/)
+[![NumPy](https://img.shields.io/badge/NumPy-1.26%2B-013243.svg?logo=numpy&logoColor=white)](https://numpy.org/)
+[![SciPy](https://img.shields.io/badge/SciPy-1.12%2B-8CAAE6.svg?logo=scipy&logoColor=white)](https://scipy.org/)
+[![Matplotlib](https://img.shields.io/badge/Matplotlib-3.8%2B-11557C.svg)](https://matplotlib.org/)
+[![imageio](https://img.shields.io/badge/imageio-2.34%2B-purple.svg)](https://imageio.readthedocs.io/)
+[![Jupyter](https://img.shields.io/badge/Jupyter-Compatible-F37626.svg?logo=jupyter&logoColor=white)](https://jupyter.org/)
+[![LaTeX](https://img.shields.io/badge/LaTeX-REVTeX%204.2-008080.svg)](https://www.latex-project.org/)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)]()
+[![Code Style](https://img.shields.io/badge/code%20style-PEP8-000000.svg)](https://peps.python.org/pep-0008/)
+[![Sim](https://img.shields.io/badge/simulations-256%2B%20Lindblad%20solves-orange.svg)]()
+[![Figures](https://img.shields.io/badge/figures-20%2B%20publication--quality-brightgreen.svg)]()
+[![Animations](https://img.shields.io/badge/animations-9%20GIFs-ff69b4.svg)]()
+[![LOC](https://img.shields.io/badge/lines%20of%20code-3k%2B-informational.svg)]()
 
 Nguyen Khoi Nguyen (Alan), Boston University  
 Advised by Prof. Luca Dal Negro, EC 585 / EC 777
