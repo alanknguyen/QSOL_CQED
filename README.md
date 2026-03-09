@@ -3,7 +3,7 @@
 **Wigner Function Dynamics and Atom-Field Entanglement in the Jaynes-Cummings Model**
 
 <p align="center">
-  <img src="paper/banner_qsol_light_new.png" width="100%">
+  <img src="paper/figures/banner_qsol_light_new.png" width="100%">
 </p>
 
 [![arXiv](https://img.shields.io/badge/arXiv-XXXX.XXXXX-b31b1b.svg)](https://arxiv.org/abs/XXXX.XXXXX)
