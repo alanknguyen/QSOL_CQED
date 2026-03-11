@@ -102,7 +102,7 @@ Time evolution of the intracavity photon number distribution $P(n, t) = \langle 
   <img src="animations/anim_bloch_sphere.gif" width="750">
 </p>
 
-The reduced atomic state $`\rho_{\text{atom}} = \operatorname{Tr}_{\text{field}}(\rho)`$ traces a trajectory inside the Bloch sphere. A pure atomic state sits on the surface ($`|\mathbf{r}| = 1`$); entanglement with the field pulls the Bloch vector toward the center ($`|\mathbf{r}| \to 0`$, maximally mixed). Left: 3D Bloch sphere trajectory color-coded by time. The atom starts at the excited state (red dot, north pole), spirals inward during collapse, reaching near the origin at $`t = t_r/2`$ (gold star), then spirals partially outward at the first revival (green triangle). Center: Bloch vector length $`|\mathbf{r}|(t)`$. Right: Von Neumann entropy $`S(\rho_{\text{atom}})`$.
+The reduced atomic state $\rho_{\mathrm{atom}} = \mathrm{Tr}_{\mathrm{field}}(\rho)$ traces a trajectory inside the Bloch sphere. A pure atomic state sits on the surface ($|\mathbf{r}| = 1$); entanglement with the field pulls the Bloch vector toward the center ($|\mathbf{r}| \to 0$, maximally mixed). Left: 3D Bloch sphere trajectory color-coded by time. The atom starts at the excited state (red dot, north pole), spirals inward during collapse, reaching near the origin at $t = t_r/2$ (gold star), then spirals partially outward at the first revival (green triangle). Center: Bloch vector length $|\mathbf{r}|(t)$. Right: Von Neumann entropy $S(\rho_{\mathrm{atom}})$.
 
 ### Wigner vs Husimi Q-Function
 
