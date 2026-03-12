@@ -1,6 +1,6 @@
 # Quantum States of Light in Cavity QED
 
-**Wigner Function Dynamics and Atom-Field Entanglement in the Jaynes-Cummings Model**
+## Wigner Function Dynamics and Atom-Field Entanglement in the Jaynes-Cummings Model
 
 <p align="center">
   <img src="paper/figures/banner_animated.gif" width="100%">
@@ -40,7 +40,9 @@ Computational study of quantum light-matter interaction in the Jaynes-Cummings (
 4. **Cat-state survival phase diagram**: 2D parameter sweep of $\delta(\bar{n}, \kappa/g)$ mapping the boundary of observable quantum coherence, plus even-cat-state fidelity
 5. **Photon blockade and second-order coherence**: $g^{(2)}(0)$ as a function of coupling strength, drive power, and detuning, demonstrating the quantum-to-classical crossover
 
----
+<p align="center">
+  <img src="paper/figures/banner_qsol_light_new.png" width="100%">
+</p>
 
 ## Table of Contents
 
