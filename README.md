@@ -551,55 +551,6 @@ The parameter slices provide practical design guidance. To observe a cat state w
 
 ---
 
-## Repository Structure
-
-```
-.
-├── paper/
-│   ├── merged_paper.tex              # Full manuscript (REVTeX 4.2)
-│   └── figures/                      # Static figures (PDF + PNG) + banner
-│
-├── simulations/
-│   ├── utils.py                      # JC operators, initial states, timescales
-│   ├── sim_wigner_evolution.py       # Wigner W(x,p) dynamics + decoherence
-│   ├── sim_entanglement_dynamics.py  # Von Neumann entropy + purity + scaling
-│   ├── sim_avoided_crossing.py       # Dressed-state energy levels + √(n+1)
-│   ├── sim_photon_number_distribution.py  # P(n,t) snapshots
-│   ├── sim_bloch_sphere.py           # Bloch trajectory + |r|(t) + entropy
-│   ├── sim_q_vs_wigner.py            # Wigner vs Husimi Q comparison
-│   ├── sim_phase_diagram.py          # δ(n̄, κ/g) + cat fidelity 2D sweep
-│   ├── sim_g2_coherence.py           # g⁽²⁾(0) vs coupling, drive, detuning
-│   ├── jaynes_cummings_comparison.py # Coherent vs thermal inversion
-│   ├── mollow_triplet.py             # Fluorescence spectrum
-│   └── wigner_fock_states.py         # Static Wigner functions for Fock states
-│
-├── animations/
-│   ├── anim_wigner_evolution.py      # Wigner evolution (120 frames, 2.6 MB)
-│   ├── anim_entanglement.py          # Entropy + Wigner (120 frames, 2.3 MB)
-│   ├── anim_decoherence.py           # Decoherence sweep (60 frames, 750 KB)
-│   ├── anim_avoided_crossing.py      # Dressed-state sweep (~80 frames, 1.4 MB)
-│   ├── anim_photon_number.py         # P(n,t) evolution (~80 frames, 1.5 MB)
-│   ├── anim_bloch_sphere.py          # Bloch trajectory (~80 frames, 1.5 MB)
-│   ├── anim_q_vs_wigner.py           # W vs Q comparison (80 frames, 4.2 MB)
-│   ├── anim_phase_diagram.py         # Cat-state decoherence sweep (40 frames)
-│   ├── anim_g2_blockade.py           # Photon blockade transition (50 frames)
-│   └── thumbnail_banner.py           # Dark banner image
-│
-├── figures/                          # New computational figures (PDF + PNG)
-│   ├── fig_avoided_crossing.*
-│   ├── fig_photon_number_evolution.*
-│   ├── fig_bloch_sphere_trajectory.*
-│   ├── fig_q_vs_wigner.*
-│   ├── fig_phase_diagram.* / fig_phase_combined.* / fig_phase_slices.* / fig_cat_fidelity.*
-│   └── fig_g2_vs_coupling.* / fig_g2_vs_drive.* / fig_g2_blockade_spectrum.* / fig_g2_combined.*
-│
-├── requirements.txt
-├── LICENSE
-└── README.md
-```
-
----
-
 ## Quick Start
 
 ```bash
