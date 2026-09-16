@@ -7,7 +7,11 @@ Sweeps g/κ from 0.1 to 12, showing:
   - Right: Live cavity transmission spectrum ⟨n⟩(Δ) that morphs from
     a single Lorentzian into a vacuum Rabi doublet as g crosses κ
 
-With g^(2)(0) and ⟨n⟩ shown as numerical readouts on the figure.
+With g^(2)(0) and ⟨n⟩ shown as numerical readouts on the figure.  The
+readouts are evaluated with the drive resonant with the lower polariton
+(Δ = ω_c − ω_L = g): driving on BARE-cavity resonance (Δ = 0) in strong
+coupling is detuned from both polaritons, ⟨n⟩ collapses to ~1e-8 and
+g^(2)(0) explodes (bunching), so it is not the blockade signature.
 
 Produces: anim_g2_blockade.gif
 """
@@ -21,9 +25,17 @@ from qutip import (
 import imageio
 import os, shutil
 
-fig_dir = '/home/claude/animations'
+# -- Repo-relative output locations (run from any working directory) --
+from pathlib import Path as _Path
+import tempfile as _tempfile
+_ROOT = _Path(__file__).resolve().parents[2]
+FIG_DIR = _ROOT / 'figures'
+ANIM_DIR = _ROOT / 'animations'
+FIG_DIR.mkdir(exist_ok=True); ANIM_DIR.mkdir(exist_ok=True)
+
+fig_dir = str(ANIM_DIR)
 os.makedirs(fig_dir, exist_ok=True)
-frame_dir = '/home/claude/_frames_g2'
+frame_dir = _tempfile.mkdtemp(prefix='qsol_frames_')
 if os.path.exists(frame_dir):
     shutil.rmtree(frame_dir)
 os.makedirs(frame_dir, exist_ok=True)
@@ -59,8 +71,8 @@ n_on_res = []
 for i, gk in enumerate(g_over_kappa):
     g_val = gk * kappa
 
-    # On-resonance g^(2)(0)
-    H0, c0, a0 = build_driven_jc(g_val, kappa, gamma, epsilon, delta=0.0)
+    # g^(2)(0) with the drive on the lower polariton, Delta = g
+    H0, c0, a0 = build_driven_jc(g_val, kappa, gamma, epsilon, delta=g_val)
     rho0 = steadystate(H0, c0)
     n0 = np.real(expect(a0.dag() * a0, rho0))
     g2_0 = np.real(expect(a0.dag() * a0.dag() * a0 * a0, rho0)) / n0**2 if n0 > 1e-15 else 2.0
@@ -194,9 +206,9 @@ for i in range(len(g_over_kappa)):
     else:
         g2_color = '#cc2200'
 
-    info_text = (rf'$g^{{(2)}}(0) = {g2_now:.3f}$'
+    info_text = (rf'$g^{{(2)}}(0)\,[\Delta = g] = {g2_now:.3f}$'
                  '\n'
-                 rf'$\langle n \rangle_{{res}} = {n_on_res[i]:.4f}$')
+                 rf'$\langle n \rangle_{{\Delta = g}} = {n_on_res[i]:.4f}$')
     ax_s.text(0.97, 0.75, info_text,
              transform=ax_s.transAxes, fontsize=13, fontweight='bold',
              color=g2_color, ha='right', va='top',

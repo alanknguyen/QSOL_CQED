@@ -23,6 +23,14 @@ from matplotlib.patches import FancyArrowPatch
 from PIL import Image
 import io
 
+# -- Repo-relative output locations (run from any working directory) --
+from pathlib import Path as _Path
+import tempfile as _tempfile
+_ROOT = _Path(__file__).resolve().parents[2]
+FIG_DIR = _ROOT / 'figures'
+ANIM_DIR = _ROOT / 'animations'
+FIG_DIR.mkdir(exist_ok=True); ANIM_DIR.mkdir(exist_ok=True)
+
 # ── Parameters ──────────────────────────────────────────────────────
 g = 1.0
 Omega0 = 2 * g  # single-photon Rabi frequency
@@ -99,9 +107,9 @@ fig.suptitle(
     fontsize=14, fontweight='bold', y=1.02
 )
 plt.tight_layout()
-fig.savefig('/home/claude/figures/fig_avoided_crossing.png', dpi=200,
+fig.savefig(f'{FIG_DIR}/fig_avoided_crossing.png', dpi=200,
             bbox_inches='tight')
-fig.savefig('/home/claude/figures/fig_avoided_crossing.pdf',
+fig.savefig(f'{FIG_DIR}/fig_avoided_crossing.pdf',
             bbox_inches='tight')
 print("Static figure saved.")
 plt.close()
@@ -219,7 +227,7 @@ for fi, D in enumerate(Delta_sweep):
     else:
         durations.append(70)
 
-gif_path = '/home/claude/animations/anim_avoided_crossing.gif'
+gif_path = f'{ANIM_DIR}/anim_avoided_crossing.gif'
 frames[0].save(gif_path, save_all=True, append_images=frames[1:],
                duration=durations, loop=0)
 print(f"Animation saved: {gif_path}")

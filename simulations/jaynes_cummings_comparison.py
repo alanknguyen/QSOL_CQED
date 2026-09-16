@@ -1,5 +1,5 @@
 # jaynes_cummings_comparison.py
-# Population inversion W(t) = sum_n P(n) cos(2 sqrt(n+1) t)
+# Population inversion W(t) = sum_n P(n) cos(2 g sqrt(n+1) t), g = 1
 # for coherent (Poisson) and thermal (Bose-Einstein) field states.
 #
 # Nguyen Khoi Nguyen (Alan)
@@ -12,15 +12,20 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
-from scipy.special import factorial
+from pathlib import Path
+
+PAPER_FIG = Path(__file__).resolve().parents[1] / 'paper' / 'figures'
+from scipy.stats import poisson
 
 
 def inversion_coherent(n_avg, t_max=100, num_points=1000):
     """W(t) for coherent state: P(n) = exp(-n_avg) * n_avg^n / n!"""
     t = np.linspace(0, t_max, num_points)
-    n_max = int(n_avg * 5)
+    # NOTE: an integer power of an integer array overflows int64 above
+    # n ~ 16 and silently corrupts the weights; use the float pmf instead.
+    n_max = int(n_avg * 5) + 20
     ns = np.arange(n_max)
-    p_n = np.exp(-n_avg) * np.power(n_avg, ns) / factorial(ns)
+    p_n = poisson.pmf(ns, n_avg)
 
     W = np.zeros_like(t)
     for n in range(n_max):
@@ -31,12 +36,11 @@ def inversion_coherent(n_avg, t_max=100, num_points=1000):
 def inversion_thermal(n_avg, t_max=100, num_points=1000):
     """W(t) for thermal state: P(n) = n_avg^n / (1 + n_avg)^(n+1)"""
     t = np.linspace(0, t_max, num_points)
-    n_max = int(n_avg * 10)
-
-    p_n = np.zeros(n_max)
-    if n_avg > 0:
-        for n in range(n_max):
-            p_n[n] = (n_avg**n) / ((1 + n_avg)**(n + 1))
+    n_max = int(n_avg * 10) + 20
+    ns = np.arange(n_max, dtype=float)
+    # log-space to avoid float overflow of n_avg**n at large n
+    p_n = (np.exp(ns * np.log(n_avg) - (ns + 1) * np.log1p(n_avg))
+           if n_avg > 0 else np.eye(1, n_max)[0])
 
     W = np.zeros_like(t)
     for n in range(n_max):
@@ -61,7 +65,7 @@ def plot_single(n_avg_values, state_type, filename=None):
         ax.set_ylim(-1, 1)
         ax.set_ylabel("Inversion", fontsize=12)
         if i == num - 1:
-            ax.set_xlabel(r"Time (units of $(2C\langle n \rangle^{1/2}/\hbar)^{-1}$)", fontsize=12)
+            ax.set_xlabel(r"$gt$", fontsize=12)
         ax.text(0.98, 0.9, rf"$\langle n \rangle = {n_avg}$",
                 ha='right', transform=ax.transAxes, fontsize=12)
 
@@ -89,7 +93,7 @@ def plot_comparison(n_avg_values, filename=None):
         if i == 0:
             ax1.set_title("Coherent State", fontsize=12)
         if i == num - 1:
-            ax1.set_xlabel(r"Time (units of $(2C\langle n \rangle^{1/2}/\hbar)^{-1}$)", fontsize=12)
+            ax1.set_xlabel(r"$gt$", fontsize=12)
         ax1.text(0.98, 0.9, rf"$\langle n \rangle = {n_avg}$",
                  ha='right', transform=ax1.transAxes, fontsize=12)
 
@@ -102,7 +106,7 @@ def plot_comparison(n_avg_values, filename=None):
         if i == 0:
             ax2.set_title("Thermal State", fontsize=12)
         if i == num - 1:
-            ax2.set_xlabel(r"Time (units of $(2C\langle n \rangle^{1/2}/\hbar)^{-1}$)", fontsize=12)
+            ax2.set_xlabel(r"$gt$", fontsize=12)
         ax2.text(0.98, 0.9, rf"$\langle n \rangle = {n_avg}$",
                  ha='right', transform=ax2.transAxes, fontsize=12)
 
@@ -113,6 +117,8 @@ def plot_comparison(n_avg_values, filename=None):
 
 if __name__ == "__main__":
     n_values = [4, 9, 14, 19, 24]
-    plot_single(n_values, 'coherent', "jaynes_cummings_coherent.png")
-    plot_single(n_values, 'thermal', "jaynes_cummings_thermal.png")
-    plot_comparison(n_values, "jaynes_cummings_comparison.png")
+    PAPER_FIG.mkdir(parents=True, exist_ok=True)
+    plot_single(n_values, 'coherent', PAPER_FIG / "jaynes_cummings_coherent.png")
+    plot_single(n_values, 'thermal', PAPER_FIG / "jaynes_cummings_thermal.png")
+    plot_comparison(n_values, PAPER_FIG / "jaynes_cummings_comparison.png")
+    print("Saved: jaynes_cummings_*.png")

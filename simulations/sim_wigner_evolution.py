@@ -10,14 +10,27 @@
 #
 # Initial state: |e> x |alpha>, resonant (Delta = 0).
 # The cavity field evolves from a coherent state into a Schrodinger
-# cat state at t = t_r/2. Wigner negativity quantifies non-classicality.
+# cat state at t = t_r/2, where the atom and field approximately
+# disentangle (Gea-Banacloche 1990). Wigner negativity
+#   delta = int |W| dx dp - 1        (Kenfack & Zyczkowski 2004)
+# quantifies non-classicality; delta = 2 * (integrated negative volume).
 
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
 from qutip import (
     basis, tensor, destroy, sigmaz, sigmam, sigmap,
     mesolve, wigner, ptrace, coherent, Qobj
 )
+
+PAPER_FIG = Path(__file__).resolve().parents[1] / 'paper' / 'figures'
+PAPER_FIG.mkdir(parents=True, exist_ok=True)
+
+
+def wigner_negativity(W, xvec):
+    """delta = int |W(x,p)| dx dp - 1 on a uniform grid (0 for classical states)."""
+    dx = xvec[1] - xvec[0]
+    return float(np.sum(np.abs(W)) * dx**2 - 1.0)
 
 # -- Parameters --
 N_cav = 35
@@ -26,7 +39,7 @@ omega_c = 0.0
 omega_a = 0.0       # resonant
 alpha = np.sqrt(10.0)  # <n> = 10
 n_bar = np.abs(alpha)**2
-t_collapse = 1.0 / g
+t_collapse = 1.0 / g      # operational collapse time, t_c = O(1/g)
 t_revival = 2 * np.pi * np.sqrt(n_bar) / g
 
 # -- Joint Hilbert space operators --
@@ -97,8 +110,8 @@ ax1.annotate('revival', xy=(t_revival * g, 0.5), fontsize=10,
 
 ax1.set_xlim(0, 1.5 * t_revival * g)
 fig1.tight_layout()
-fig1.savefig('fig_inversion_snapshots.png', dpi=200, bbox_inches='tight')
-fig1.savefig('fig_inversion_snapshots.pdf', bbox_inches='tight')
+fig1.savefig(PAPER_FIG / 'fig_inversion_snapshots.png', dpi=200, bbox_inches='tight')
+fig1.savefig(PAPER_FIG / 'fig_inversion_snapshots.pdf', bbox_inches='tight')
 print("Saved: fig_inversion_snapshots")
 
 
@@ -126,10 +139,9 @@ for i, ts in enumerate(t_snapshots):
     ax.set_aspect('equal')
     fig2.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 
-    # Wigner negativity: integral of |W| - 1 (= 0 for classical states)
-    W_neg = np.sum(W[W < 0]) * (xvec[1] - xvec[0])**2
-    purity = (rho_field * rho_field).tr()
-    print(f"  t={ts:.3f}: negativity={abs(W_neg):.4f}, purity={purity:.4f}")
+    delta = wigner_negativity(W, xvec)
+    purity = (rho_field * rho_field).tr().real
+    print(f"  t={ts:.3f}: delta={delta:.4f}, purity={purity:.4f}")
 
 fig2.suptitle(
     r'Wigner Function Evolution of Cavity Field'
@@ -137,8 +149,8 @@ fig2.suptitle(
     fontsize=13, y=1.02
 )
 fig2.tight_layout()
-fig2.savefig('fig_wigner_evolution.png', dpi=200, bbox_inches='tight')
-fig2.savefig('fig_wigner_evolution.pdf', bbox_inches='tight')
+fig2.savefig(PAPER_FIG / 'fig_wigner_evolution.png', dpi=200, bbox_inches='tight')
+fig2.savefig(PAPER_FIG / 'fig_wigner_evolution.pdf', bbox_inches='tight')
 print("Saved: fig_wigner_evolution")
 
 
@@ -154,7 +166,8 @@ im3 = ax3a.contourf(xvec, xvec, W_cat, levels=100, cmap='RdBu_r',
                       vmin=-wlim, vmax=wlim)
 ax3a.set_xlabel(r'$x$', fontsize=13)
 ax3a.set_ylabel(r'$p$', fontsize=13)
-ax3a.set_title(r'Wigner function at $t = t_r/2$ (cat state)', fontsize=12)
+delta_cat = wigner_negativity(W_cat, xvec)
+ax3a.set_title(rf'Wigner function at $t = t_r/2$ (cat state), $\delta = {delta_cat:.2f}$', fontsize=12)
 ax3a.set_aspect('equal')
 fig3.colorbar(im3, ax=ax3a)
 
@@ -167,12 +180,12 @@ ax3b.fill_between(xvec, W_cat[mid_idx, :], 0,
                    color='red', alpha=0.3, label='Negative region')
 ax3b.set_xlabel(r'$x$', fontsize=13)
 ax3b.set_ylabel(r'$W(x, 0)$', fontsize=13)
-ax3b.set_title(r'Cross-section at $p = 0$', fontsize=11)
+ax3b.set_title(r'Cross-section at $p = 0$: negative regions witness non-classicality', fontsize=10)
 ax3b.legend(fontsize=11)
 
 fig3.tight_layout()
-fig3.savefig('fig_cat_state_detail.png', dpi=200, bbox_inches='tight')
-fig3.savefig('fig_cat_state_detail.pdf', bbox_inches='tight')
+fig3.savefig(PAPER_FIG / 'fig_cat_state_detail.png', dpi=200, bbox_inches='tight')
+fig3.savefig(PAPER_FIG / 'fig_cat_state_detail.pdf', bbox_inches='tight')
 print("Saved: fig_cat_state_detail")
 
 
@@ -201,15 +214,15 @@ for j, kap in enumerate(kappa_values):
     axes4[j].set_aspect('equal')
     fig4.colorbar(im4, ax=axes4[j], fraction=0.046, pad=0.04)
 
-    W_neg_d = np.sum(W_d[W_d < 0]) * (xvec[1] - xvec[0])**2
-    purity_d = (rho_f * rho_f).tr()
-    print(f"  kappa/g={kap/g:.2f}: negativity={abs(W_neg_d):.4f}, purity={purity_d:.4f}")
+    delta_d = wigner_negativity(W_d, xvec)
+    purity_d = (rho_f * rho_f).tr().real
+    print(f"  kappa/g={kap/g:.2f}: delta={delta_d:.4f}, purity={purity_d:.4f}")
 
 fig4.suptitle(
     rf'Decoherence of Cat State at $t = t_r/2$ ($\bar{{n}}={n_bar:.0f}$)',
     fontsize=13, y=1.04
 )
 fig4.tight_layout()
-fig4.savefig('fig_wigner_decoherence.png', dpi=200, bbox_inches='tight')
-fig4.savefig('fig_wigner_decoherence.pdf', bbox_inches='tight')
+fig4.savefig(PAPER_FIG / 'fig_wigner_decoherence.png', dpi=200, bbox_inches='tight')
+fig4.savefig(PAPER_FIG / 'fig_wigner_decoherence.pdf', bbox_inches='tight')
 print("Saved: fig_wigner_decoherence")

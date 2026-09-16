@@ -21,13 +21,21 @@ import qutip as qt
 from PIL import Image
 import io
 
+# -- Repo-relative output locations (run from any working directory) --
+from pathlib import Path as _Path
+import tempfile as _tempfile
+_ROOT = _Path(__file__).resolve().parents[2]
+FIG_DIR = _ROOT / 'figures'
+ANIM_DIR = _ROOT / 'animations'
+FIG_DIR.mkdir(exist_ok=True); ANIM_DIR.mkdir(exist_ok=True)
+
 # ── Parameters ──────────────────────────────────────────────────────
 g = 1.0
 n_bar = 10
 alpha = np.sqrt(n_bar)
 N_cav = 40
 t_r = 2 * np.pi * np.sqrt(n_bar) / g
-t_c = np.pi / g
+t_c = 1.0 / g      # operational collapse time (paper Sec. III); t_c = O(1/g)
 t_max = 1.3 * t_r
 N_time = 600
 tlist = np.linspace(0, t_max, N_time)
@@ -86,8 +94,7 @@ for col, (t_snap, label) in enumerate(zip(snapshot_times, snapshot_labels)):
     # Top row: Wigner
     ax_w = axes[0, col]
     wlim = max(abs(W.min()), abs(W.max()))
-    ax_w.contourf(xvec, xvec, W, levels=60, cmap='RdBu_r',
-                  vmin=-wlim, vmax=wlim)
+    ax_w.contourf(xvec, xvec, W, levels=np.linspace(-wlim, wlim, 61), cmap='RdBu_r')
     ax_w.set_aspect('equal')
     ax_w.set_title(label, fontsize=9)
     if col == 0:
@@ -99,7 +106,9 @@ for col, (t_snap, label) in enumerate(zip(snapshot_times, snapshot_labels)):
 
     # Bottom row: Q
     ax_q = axes[1, col]
-    ax_q.contourf(xvec_q, xvec_q, Q, levels=60, cmap='inferno')
+    # pcolormesh with vmin=0: contourf leaves sub-level (round-off negative) cells
+    # unfilled, which produced a white blob in the t=0 Husimi panel.
+    ax_q.pcolormesh(xvec_q, xvec_q, np.clip(Q, 0, None), cmap='inferno', vmin=0, shading='auto')
     ax_q.set_aspect('equal')
     if col == 0:
         ax_q.set_ylabel(r'Husimi $Q(\alpha)$' + '\n' + r'$p$', fontsize=10)
@@ -110,9 +119,9 @@ for col, (t_snap, label) in enumerate(zip(snapshot_times, snapshot_labels)):
     ax_q.tick_params(labelsize=6)
 
 plt.tight_layout(rect=[0, 0, 1, 0.93])
-fig.savefig('/home/claude/figures/fig_q_vs_wigner.png', dpi=200,
+fig.savefig(f'{FIG_DIR}/fig_q_vs_wigner.png', dpi=200,
             bbox_inches='tight')
-fig.savefig('/home/claude/figures/fig_q_vs_wigner.pdf', bbox_inches='tight')
+fig.savefig(f'{FIG_DIR}/fig_q_vs_wigner.pdf', bbox_inches='tight')
 print("Static figure saved.")
 plt.close()
 
@@ -143,8 +152,7 @@ for fi, idx in enumerate(frame_indices):
     # ─ Wigner function
     ax1 = fig.add_subplot(gs[0])
     wlim = max(abs(W.min()), abs(W.max()), 0.01)
-    ax1.contourf(xvec_a, xvec_a, W, levels=50, cmap='RdBu_r',
-                 vmin=-wlim, vmax=wlim)
+    ax1.contourf(xvec_a, xvec_a, W, levels=np.linspace(-wlim, wlim, 51), cmap='RdBu_r')
     ax1.set_aspect('equal')
     ax1.set_xlabel(r'$x$', fontsize=11)
     ax1.set_ylabel(r'$p$', fontsize=11)
@@ -158,7 +166,7 @@ for fi, idx in enumerate(frame_indices):
 
     # ─ Q function
     ax2 = fig.add_subplot(gs[1])
-    ax2.contourf(xvec_a, xvec_a, Q, levels=50, cmap='inferno')
+    ax2.pcolormesh(xvec_a, xvec_a, np.clip(Q, 0, None), cmap='inferno', vmin=0, shading='auto')
     ax2.set_aspect('equal')
     ax2.set_xlabel(r'$x$', fontsize=11)
     ax2.set_ylabel(r'$p$', fontsize=11)
@@ -226,7 +234,7 @@ for fi, idx in enumerate(frame_indices):
     else:
         durations.append(80)
 
-gif_path = '/home/claude/animations/anim_q_vs_wigner.gif'
+gif_path = f'{ANIM_DIR}/anim_q_vs_wigner.gif'
 frames[0].save(gif_path, save_all=True, append_images=frames[1:],
                duration=durations, loop=0)
 print(f"Animation saved: {gif_path}")

@@ -17,6 +17,14 @@ from qutip import (
     mesolve, wigner, ptrace, entropy_vn, coherent, Qobj, ket2dm
 )
 
+# -- Repo-relative output locations (run from any working directory) --
+from pathlib import Path as _Path
+import tempfile as _tempfile
+_ROOT = _Path(__file__).resolve().parents[2]
+FIG_DIR = _ROOT / 'figures'
+ANIM_DIR = _ROOT / 'animations'
+FIG_DIR.mkdir(exist_ok=True); ANIM_DIR.mkdir(exist_ok=True)
+
 # -- Parameters --
 N_cav = 35
 g = 1.0
@@ -52,7 +60,7 @@ for i in range(n_frames):
 
 # -- Render frames --
 xvec = np.linspace(-7, 7, 150)
-frame_dir = '/home/claude/ent_frames'
+frame_dir = _tempfile.mkdtemp(prefix='qsol_frames_')
 os.makedirs(frame_dir, exist_ok=True)
 global_wlim = 0.30
 
@@ -133,7 +141,7 @@ durations[0] = 1.0
 durations[cat_idx] = 1.5
 durations[rev_idx] = 1.0
 
-imageio.mimsave('/home/claude/anim_entanglement.gif', frames,
+imageio.mimsave(f'{ANIM_DIR}/anim_entanglement.gif', frames,
                 duration=durations, loop=0)
 print("Saved: anim_entanglement.gif")
 

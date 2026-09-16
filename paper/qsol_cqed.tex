@@ -5,6 +5,7 @@
 ]{revtex4-2}
 
 \usepackage{graphicx}
+\graphicspath{{figures/}}
 \usepackage{dcolumn}
 \usepackage{bm}
 \usepackage{braket}
@@ -23,7 +24,7 @@
 \date{\today}
 
 \begin{abstract}
-We present a computational study of quantum light--matter interaction in the Jaynes--Cummings (JC) model, combining analytical derivations with original numerical simulations. Starting from the dipole-coupling Hamiltonian, we derive the JC model under the rotating-wave approximation, solve for the dressed eigenstates and their limiting behavior, and obtain analytical expressions for the collapse time $t_c \sim \pi/g$ and the revival time $t_r = 2\pi\sqrt{\bar{n}}/g$. We introduce Fock, coherent, squeezed, and thermal states and their Wigner function representations, then solve the full JC dynamics using the Lindblad master equation. The principal computational results are: (i) time-resolved Wigner function snapshots revealing the formation of a Schr\"{o}dinger cat state in the cavity field during the collapse of Rabi oscillations, with Wigner negativity volume $\delta = 0.43$ at half the revival time; (ii) a systematic comparison of the von Neumann entanglement entropy $S(\rho_{\text{atom}})$ across coherent, thermal, squeezed, and Fock initial field states, demonstrating that entropy peaks during collapse and dips at revival exclusively for the coherent state; and (iii) a quantitative study of decoherence, showing that cavity decay rates as low as $\kappa/g = 0.02$ reduce the cat-state Wigner negativity by over 80\%. All simulations are performed in QuTiP with reproducible code available at \url{https://github.com/alanknguyen/QSOL_CQED}.
+We present a computational study of quantum light--matter interaction in the Jaynes--Cummings (JC) model, combining analytical derivations with original numerical simulations. Starting from the electric-dipole coupling Hamiltonian, we derive the JC model under the rotating-wave approximation, solve for the dressed eigenstates and their limiting behavior, and obtain analytical expressions for the collapse time $t_c = O(1/g)$ and the revival time $t_r = 2\pi\sqrt{\bar{n}}/g$. We introduce Fock, coherent, squeezed, and thermal states and their Wigner function representations, then solve the full JC dynamics using the Lindblad master equation. The principal computational results are: (i) time-resolved Wigner function snapshots revealing the formation of a Schr\"{o}dinger cat state in the cavity field at half the revival time, with Wigner negativity volume $\delta = 0.85$, field purity $0.96$, and fidelity $0.78$ with respect to a two-component cat state; at this instant the atom and field approximately \emph{disentangle} (reduced atomic entropy $S \approx 0.14$~bit), so the cat is a nearly pure state of the field alone; (ii) a systematic comparison of the reduced atomic entropy and of the logarithmic negativity across coherent, thermal, squeezed, and Fock initial field states, demonstrating that the half-revival disentanglement occurs only for the coherent state, and that for a thermal field a saturated entropy of one bit coexists with a logarithmic negativity of only $\approx 0.2$; and (iii) a quantitative study of decoherence, showing that a cavity decay rate as low as $\kappa/g = 0.02$ reduces the cat-state Wigner negativity by over 80\%. All simulations are performed in QuTiP with reproducible code available at \url{https://github.com/alanknguyen/QSOL_CQED}.
 \end{abstract}
 
 \keywords{quantum optics, Jaynes--Cummings model, Wigner function, entanglement entropy, cavity QED, Schr\"{o}dinger cat state, decoherence}
@@ -40,7 +41,7 @@ Coherent manipulation of quantum two-level systems is a cornerstone of quantum t
 
 The Jaynes--Cummings (JC) model~\cite{jaynes1963}, which describes the interaction of a single two-level atom with a single quantized cavity mode, is the simplest fully quantum model of light--matter interaction. Despite its simplicity, the JC model predicts a rich set of phenomena with no classical analog: vacuum Rabi splitting, collapse and revival of Rabi oscillations~\cite{eberly1980}, and the dynamical generation of Schr\"{o}dinger cat states in the cavity field~\cite{brune1996}. These predictions have been confirmed in pioneering cavity quantum electrodynamics (QED) experiments with Rydberg atoms in microwave cavities~\cite{rempe1987, haroche2006} and, more recently, in circuit QED with superconducting qubits coupled to microwave resonators~\cite{blais2021}.
 
-While the JC model is a textbook topic, most treatments present the collapse-revival phenomenon qualitatively and do not explore the associated phase-space dynamics or entanglement structure in detail. In this paper, we combine a self-contained theoretical introduction with original computational results that go beyond standard treatments in two ways. First, we compute the time-resolved Wigner function of the cavity field during JC dynamics, directly visualizing the formation and destruction of cat states in phase space and quantifying their non-classicality via the Wigner negativity volume. Second, we systematically compare the atom--field entanglement entropy across four classes of initial field states (coherent, thermal, squeezed vacuum, and Fock), revealing how the field's photon statistics govern the entanglement dynamics. We also study the effect of cavity dissipation via the Lindblad master equation, quantifying how rapidly decoherence destroys the non-classical features.
+While the JC model is a textbook topic, most treatments present the collapse-revival phenomenon qualitatively and do not explore the associated phase-space dynamics or entanglement structure in detail. In this paper, we combine a self-contained theoretical introduction with original computational results that go beyond standard treatments in two ways. First, we compute the time-resolved Wigner function of the cavity field during JC dynamics, directly visualizing the formation and destruction of cat states in phase space and quantifying their non-classicality via the Wigner negativity volume. Second, we systematically compare the atom--field entanglement across four classes of initial field states (coherent, thermal, squeezed vacuum, and Fock), using the reduced entropy where the global state is pure and the logarithmic negativity where it is mixed, revealing how the field's photon statistics govern the entanglement dynamics and, in particular, that the atom and field approximately disentangle at half the revival time only for a coherent field. We also study the effect of cavity dissipation via the Lindblad master equation, quantifying how rapidly decoherence destroys the non-classical features.
 
 The paper is organized as follows. Section~\ref{sec:theory} reviews the quantization of the electromagnetic field, introduces the principal quantum states of light and the Wigner function formalism, derives the Jaynes--Cummings Hamiltonian from first principles including the rotating-wave approximation, solves for the dressed states and their limiting behavior, and presents analytical derivations of the collapse and revival timescales. Section~\ref{sec:methods} describes the computational methods. Section~\ref{sec:results} presents the simulation results. Section~\ref{sec:criteria} discusses criteria for distinguishing classical and quantum light. Section~\ref{sec:experiment} reviews the experimental observation of these phenomena across four platforms. Section~\ref{sec:conclusions} concludes.
 
@@ -123,13 +124,13 @@ A quantitative measure of non-classicality is the Wigner negativity volume~\cite
 \delta = \int \big|W(x,p)\big| \, dx\, dp - 1.
 \label{eq:negativity}
 \end{equation}
-For classical states, $\delta = 0$; for non-classical states, $\delta > 0$. We use $\delta$ as a quantitative probe throughout the simulations in Sec.~\ref{sec:results}.
+Since $\int W\,dx\,dp = 1$, $\delta$ equals twice the integrated volume of the negative part of $W$. Every state with a non-negative Wigner function has $\delta = 0$; this includes all classical states but also, for example, the squeezed vacuum, so $\delta > 0$ is a sufficient but not a necessary witness of non-classicality. We use $\delta$ as a quantitative probe throughout the simulations in Sec.~\ref{sec:results}.
 
 
 \subsection{Derivation of the Jaynes--Cummings Hamiltonian}
 \label{sec:jcm}
 
-We derive the Jaynes--Cummings model~\cite{jaynes1963} from the minimal light--matter coupling Hamiltonian. In the dipole approximation, the interaction between a two-level atom and a single quantized cavity mode of frequency $\omega_c$ is
+We derive the Jaynes--Cummings model~\cite{jaynes1963} from the electric-dipole form of the light--matter interaction, the dipole-gauge counterpart of the minimal-coupling Hamiltonian $(\bm{p} - q\bm{A})^2/2m$ to which it is related by the Power--Zienau--Woolley transformation~\cite{scully1997}. In the dipole approximation, the interaction between a two-level atom and a single quantized cavity mode of frequency $\omega_c$ is
 \begin{equation}
 H_{\text{int}} = -\bm{d} \cdot \bm{E}(t),
 \end{equation}
@@ -203,15 +204,15 @@ Consider the atom initially excited and the field in a Fock state with $n$ photo
 \end{equation}
 Evolving each eigenstate with its eigenphase gives the time-dependent state (dropping the common phase):
 \begin{equation}
-|\Psi(t)\rangle = \cos\!\left(\frac{\Omega_0\sqrt{n+1}}{2}\,t\right)|e,n\rangle + i\sin\!\left(\frac{\Omega_0\sqrt{n+1}}{2}\,t\right)|g,n{+}1\rangle.
+|\Psi(t)\rangle = \cos\!\left(\tfrac{1}{2}\Omega_n t\right)|e,n\rangle - i\sin\!\left(\tfrac{1}{2}\Omega_n t\right)|g,n{+}1\rangle,
 \label{eq:rabi_evolution}
 \end{equation}
-The excited-state probability oscillates sinusoidally:
+where $\Omega_n = \Omega_0\sqrt{n+1}$ and the sign of the second term follows from $e^{-iH_{\text{JC}}t/\hbar}$ with the coupling $+\hbar g(a^\dagger\sigma^- + a\sigma^+)$. The excited-state probability oscillates sinusoidally:
 \begin{equation}
 P_e(t) = \cos^2\!\left(\frac{\Omega_0\sqrt{n+1}}{2}\,t\right),
 \label{eq:pe_fock}
 \end{equation}
-at the $n$-photon Rabi frequency $\Omega_n = \Omega_0\sqrt{n+1}$. For $n = 0$, this is the vacuum Rabi oscillation: an excited atom in an empty cavity emits and reabsorbs a single photon periodically at frequency $\Omega_0$. For $n \gg 1$, the Rabi frequency $\Omega_0\sqrt{n}$ is proportional to the classical field amplitude $\propto \sqrt{n}$, recovering the semiclassical limit. These coherent oscillations require the strong-coupling regime ($g \gg \kappa, \gamma$) so that the photon is not lost from the cavity during a Rabi cycle~\cite{haroche2006}.
+at the $n$-photon Rabi frequency $\Omega_n = \Omega_0\sqrt{n+1}$. For $n = 0$, this is the vacuum Rabi oscillation: an excited atom in an empty cavity emits and reabsorbs a single photon periodically at frequency $\Omega_0$. For $n \gg 1$, the Rabi frequency $\Omega_0\sqrt{n+1} \approx \Omega_0\sqrt{n}$ is proportional to the classical field amplitude $\propto \sqrt{n}$, recovering the semiclassical limit. These coherent oscillations require the strong-coupling regime ($g \gg \kappa, \gamma$) so that the photon is not lost from the cavity during a Rabi cycle~\cite{haroche2006}.
 
 
 \subsection{Collapse and revival of Rabi oscillations}
@@ -237,12 +238,12 @@ Equation~(\ref{eq:pe_cos_sum}) is a weighted superposition of cosines at incomme
 \begin{equation}
 \delta\Omega \sim \frac{\partial\Omega_n}{\partial n}\bigg|_{\bar{n}} \cdot \sigma_n = \frac{\Omega_0}{2\sqrt{\bar{n}}} \cdot \sqrt{\bar{n}} = \frac{\Omega_0}{2}.
 \end{equation}
-The oscillations dephase when $\delta\Omega \cdot t_c \sim \pi$, giving the collapse time
+The oscillations dephase when $\delta\Omega \cdot t_c \sim 1$, giving the collapse time
 \begin{equation}
-t_c \sim \frac{2\pi}{\Omega_0} = \frac{\pi}{g},
+t_c \sim \frac{2}{\Omega_0} = \frac{1}{g},
 \label{eq:t_collapse}
 \end{equation}
-independent of $\bar{n}$~\cite{eberly1980}. After the collapse, $P_e(t)$ fluctuates around $1/2$ with negligible amplitude.
+independent of $\bar{n}$~\cite{eberly1980}. The numerical prefactor depends on the criterion adopted: linearizing $\sqrt{n+1}$ about $\bar{n}$ and summing Eq.~(\ref{eq:pe_cos_sum}) over the approximately Gaussian Poisson weights gives the envelope $P_e(t) - \tfrac{1}{2} \approx \tfrac{1}{2}\cos(\Omega_0\sqrt{\bar{n}}\,t)\,e^{-g^2t^2/2}$, whose $1/e$ time is $\sqrt{2}/g$. Throughout this paper we use the operational definition $t_c \equiv 1/g$; in the simulations the oscillations are fully damped by $t \approx 2t_c$. After the collapse, $P_e(t)$ fluctuates around $1/2$ with negligible amplitude.
 
 \textit{Revival.} Despite the apparent loss of coherence, the oscillations return at a later time. Because the Rabi frequencies are $\Omega_0\sqrt{n+1}$ (a discrete set, not a continuum), the phases can realign modulo $2\pi$. To estimate the revival time, we require adjacent Fock components near $n \approx \bar{n}$ to accumulate a phase difference of exactly $2\pi$:
 \begin{equation}
@@ -253,21 +254,21 @@ For large $n$, $\sqrt{n+2} - \sqrt{n+1} \approx 1/(2\sqrt{n+1})$, giving
 t_r \approx \frac{4\pi\sqrt{\bar{n}}}{\Omega_0} = \frac{2\pi\sqrt{\bar{n}}}{g}.
 \label{eq:t_revival}
 \end{equation}
-The ratio $t_r/t_c \approx 2\sqrt{\bar{n}}$ shows that for large $\bar{n}$, the revival occurs many collapse times later, with a broad plateau of near-zero oscillation amplitude in between.
+The ratio $t_r/t_c \approx 2\pi\sqrt{\bar{n}}$ shows that for large $\bar{n}$, the revival occurs many collapse times later, with a broad plateau of near-zero oscillation amplitude in between.
 
 The revival is a purely quantum effect. A classical field with a continuous amplitude distribution would produce irreversible dephasing with no recurrence. The revival requires the \textit{discrete} spectrum of Fock-state Rabi frequencies, and its observation constitutes direct evidence that the intracavity field is quantized~\cite{eberly1980, haroche2006}.
 
 After the first revival, the components dephase again on a timescale $\sim t_c$, producing a second collapse. Further revivals occur quasi-periodically at integer multiples of $t_r$, though higher-order revivals become progressively less sharp as the accumulated phase errors grow~\cite{gerry2004}.
 
-For a thermal field (photon statistics given by the Bose--Einstein distribution, $p(n) = \bar{n}^n/(1+\bar{n})^{n+1}$), the distribution is much broader than Poisson ($\sigma_n \sim \bar{n}$ rather than $\sqrt{\bar{n}}$). The dephasing is correspondingly faster and permanent: no revival occurs. This contrast between coherent and thermal fields is a central result of our simulations (Sec.~\ref{sec:entropy_results}).
+For a thermal field (photon statistics given by the Bose--Einstein distribution, $p(n) = \bar{n}^n/(1+\bar{n})^{n+1}$), the distribution is much broader than Poisson ($\sigma_n \sim \bar{n}$ rather than $\sqrt{\bar{n}}$). The dephasing is correspondingly faster, and no pronounced revival is resolved within the simulated window; the evolution nevertheless remains unitary, so this is a loss of visibility rather than a strictly irreversible process. This contrast between coherent and thermal fields is a central result of our simulations (Sec.~\ref{sec:entropy_results}).
 
-During the collapsed period, the atom and field become highly entangled, and the conditional field state can approximate a Schr\"{o}dinger cat state, a superposition of two coherent states with opposite phases~\cite{gea-banacloche1990}. This connection between Rabi collapse, entanglement, and cat-state formation is a central theme of our computational results.
+During the collapse the atom and field become strongly entangled. Remarkably, at half the revival time, $t_r/2 = \pi\sqrt{\bar{n}}/g$, the two branches of the atomic state reconverge onto a common state that is independent of the initial atomic state, so that the atom and field approximately \emph{disentangle}, and the field is left in a nearly pure Schr\"{o}dinger cat state, a superposition of two coherent states with opposite phases~\cite{gea-banacloche1990, gea-banacloche1991, phoenix1991}. This connection between Rabi collapse, transient entanglement, half-revival disentanglement, and cat-state formation is a central theme of our computational results.
 
 
 \subsection{Dressed-state spectroscopy}
 \label{sec:dressed_spectroscopy}
 
-The dressed-state picture also explains spectroscopic signatures of strong atom--field coupling. In resonance fluorescence of a strongly driven two-level atom, the emission spectrum exhibits a central peak at the drive frequency and sidebands at $\omega \pm \Omega$, the Mollow triplet~\cite{mollow1969}, which can be interpreted as transitions between dressed states separated by $\hbar\Omega$. In cavity QED, a strongly coupled atom--cavity system shows normal-mode splitting: the cavity transmission spectrum splits into two peaks at $\omega_c \pm g$ for one excitation, a direct observation of the $n = 1$ dressed-state splitting of $2g$~\cite{thompson1992}. As $n$ increases, the splitting grows as $\sqrt{n}$, though thermal fluctuations may blur individual $n$-dependent peaks in practice.
+The dressed-state picture also explains spectroscopic signatures of strong atom--field coupling. In resonance fluorescence of a strongly driven two-level atom, the emission spectrum exhibits a central peak at the drive frequency and sidebands at $\omega \pm \Omega$, the Mollow triplet~\cite{mollow1969}, which can be interpreted as transitions between dressed states separated by $\hbar\Omega$. In cavity QED, a strongly coupled atom--cavity system shows normal-mode splitting: the cavity transmission spectrum splits into two peaks at $\omega_c \pm g$ for one excitation, a direct observation of the $n = 1$ dressed-state splitting of $2g$~\cite{thompson1992}. As $n$ increases, the splitting grows as $\sqrt{n+1}$, though thermal fluctuations may blur individual $n$-dependent peaks in practice.
 
 
 \subsection{Open quantum systems: the Lindblad master equation}
@@ -285,7 +286,7 @@ where the Lindblad dissipator is
 \end{equation}
 The strong-coupling regime, where quantum coherent effects dominate, requires $g \gg \kappa, \gamma$ so that the atom and field exchange energy many times before dissipation destroys coherence. In this regime, vacuum Rabi splitting is spectroscopically resolvable and collapse-revival dynamics can unfold before being damped.
 
-Dissipation has a particularly dramatic effect on the cat states generated during JC dynamics. The decoherence rate for a superposition of two coherent states separated by $\Delta\alpha$ in phase space scales as $\kappa|\Delta\alpha|^2 \sim \kappa\bar{n}$~\cite{zurek2003}, far exceeding the bare cavity decay rate $\kappa$. This rapid fragility of mesoscopic superpositions is a central result of our simulations.
+Dissipation has a particularly dramatic effect on the cat states generated during JC dynamics. The decoherence rate of the interference fringes of a superposition of two coherent states separated by $\Delta\alpha$ in phase space is $\kappa|\Delta\alpha|^2/2$~\cite{zurek2003, haroche2006}; for the JC cat, whose components sit at $\pm i\sqrt{\bar{n}}$ (Sec.~\ref{sec:wigner_results}), this is $2\kappa\bar{n}$, far exceeding the bare cavity decay rate $\kappa$. This rapid fragility of mesoscopic superpositions is a central result of our simulations.
 
 
 \subsection{Atom--field entanglement: von Neumann entropy}
@@ -303,7 +304,14 @@ where $\rho_{\text{atom}} = \text{Tr}_{\text{field}}(|\Psi\rangle\langle\Psi|)$.
 \end{equation}
 which equals unity for product states and decreases with increasing entanglement.
 
-In the JC model, the entanglement dynamics are directly correlated with the collapse and revival of Rabi oscillations~\cite{phoenix1988}. As the oscillation amplitudes collapse, the atom becomes maximally entangled with the field ($S \to 1$~bit). At revival times, the system approximately refactorizes and $S$ dips toward zero. This entropy--inversion correspondence was first analyzed by Phoenix and Knight~\cite{phoenix1988}, and we verify it computationally in Sec.~\ref{sec:results}.
+Equation~(\ref{eq:entropy}) is an entanglement measure only when the global atom--field state is pure. If the global state is mixed, as for a thermal initial field or whenever dissipation acts, $S(\rho_{\text{atom}})$ counts classical as well as quantum correlations and can saturate at 1~bit for a weakly entangled state. In those cases we use the logarithmic negativity~\cite{vidal2002, plenio2005}
+\begin{equation}
+E_{\mathcal{N}} = \log_2 \big\| \rho^{T_{\text{atom}}} \big\|_1,
+\label{eq:logneg}
+\end{equation}
+where $T_{\text{atom}}$ denotes partial transposition with respect to the atom and $\|\cdot\|_1$ the trace norm. $E_{\mathcal{N}}$ is an entanglement monotone for mixed states; it vanishes for separable states and equals 1 for a maximally entangled atom--field pair.
+
+In the JC model, the entanglement dynamics are directly correlated with the collapse and revival of Rabi oscillations~\cite{phoenix1988}. As the oscillations collapse, the atom becomes strongly entangled with the field ($S \to 1$~bit). At half the revival time, however, the system approximately refactorizes: $S$ passes through a minimum, the atom approaches a pure state, and the field is left in a nearly pure cat state~\cite{gea-banacloche1990, phoenix1991}. Around the full revival the branches rephase and the entanglement grows again. This entropy--inversion correspondence was first analyzed by Phoenix and Knight~\cite{phoenix1988, phoenix1991}, and we verify it computationally in Sec.~\ref{sec:results}.
 
 
 %% ============================================================
@@ -314,15 +322,15 @@ In the JC model, the entanglement dynamics are directly correlated with the coll
 
 All simulations are performed using QuTiP (Quantum Toolbox in Python, version~5.2)~\cite{johansson2012, johansson2013}, an open-source framework for simulating open and closed quantum systems. The cavity field is represented in a truncated Fock basis $\{|0\rangle, |1\rangle, \ldots, |N_{\text{cav}}-1\rangle\}$, and the joint atom--field Hilbert space has dimension $2N_{\text{cav}}$.
 
-\textit{Fock space truncation.} For a coherent state with mean photon number $\bar{n}$, the Poisson distribution has standard deviation $\sqrt{\bar{n}}$. We require the truncation to satisfy $N_{\text{cav}} \geq 3\bar{n} + 10$, and verify convergence by confirming that $\text{Tr}[\rho] = 1$ to within $10^{-8}$ and that results are unchanged when $N_{\text{cav}}$ is increased by 20\%.
+\textit{Fock space truncation.} The truncation is chosen per initial state. For the coherent and Fock states with $\bar{n} = 10$ we use $N_{\text{cav}} = 35$--$50$: the Poisson weight beyond $n = 35$ is below $10^{-9}$, and every quantity reported at $t_r/2$ (entropy, purity, $\delta$) agrees to four digits between $N_{\text{cav}} = 35$, 50, and 70. Thermal and squeezed-vacuum fields have much heavier photon-number tails (geometric, and $\propto \tanh^{2m}r/\sqrt{m}$ for $n = 2m$, respectively): at $N_{\text{cav}} = 50$ the truncated states would have $\langle n\rangle = 9.57$ and $9.15$ instead of 10, so for these we use $N_{\text{cav}} = 150$, which reproduces $\langle n\rangle = 10$ to four digits and leaves a truncated weight below $10^{-6}$. For the $\bar{n}$ scan we use $N_{\text{cav}} = 3\bar{n} + 20$. Trace normalization alone is not used as a convergence criterion.
 
-\textit{Time evolution.} For unitary dynamics, we propagate the initial state vector via the Schr\"{o}dinger equation using QuTiP's \texttt{mesolve} with an adaptive Runge--Kutta integrator. For dissipative dynamics (Eq.~\ref{eq:lindblad}), the full density matrix $\rho(t)$ is propagated using the same solver.
+\textit{Time evolution.} All propagation uses QuTiP's \texttt{mesolve} (version 5.2.3) with its default adaptive-step Adams--Moulton multistep integrator (\texttt{method='adams'}, absolute and relative tolerances $10^{-8}$ and $10^{-6}$). Pure initial states without dissipation are propagated as state vectors; the thermal initial field and all dissipative runs [Eq.~(\ref{eq:lindblad})] propagate the full density matrix.
 
-\textit{Wigner functions.} At each snapshot time, we obtain the reduced field state $\rho_{\text{field}}(t) = \text{Tr}_{\text{atom}}[\rho(t)]$ via partial trace, then compute $W(x,p)$ on a $200 \times 200$ grid over $[-7, 7]^2$ using QuTiP's \texttt{wigner} function~\cite{johansson2012}.
+\textit{Wigner functions.} At each snapshot time, we obtain the reduced field state $\rho_{\text{field}}(t) = \text{Tr}_{\text{atom}}[\rho(t)]$ via partial trace, then compute $W(x,p)$ on a $200 \times 200$ grid over $[-7, 7]^2$ (spacing 0.07, i.e.\ ten points per interference fringe of spacing $\pi/\sqrt{2\bar{n}} \approx 0.70$) using QuTiP's \texttt{wigner} function~\cite{johansson2012} in the convention $a = (x + ip)/\sqrt{2}$, for which $\int W\,dx\,dp = 1$ (verified to $10^{-4}$ on the grid). The negativity $\delta$ of Eq.~(\ref{eq:negativity}) is evaluated on the same grid.
 
-\textit{Entanglement measures.} The von Neumann entropy $S(\rho_{\text{atom}})$ is computed at each time step by diagonalizing the $2 \times 2$ reduced atomic density matrix. The field purity $\mathcal{P}(t) = \text{Tr}[\rho_{\text{field}}^2]$ is computed directly.
+\textit{Entanglement and cat-state measures.} The von Neumann entropy $S(\rho_{\text{atom}})$ is computed at each time step from the eigenvalues of the $2 \times 2$ reduced atomic density matrix, the field purity $\mathcal{P}(t) = \text{Tr}[\rho_{\text{field}}^2]$ directly, and the logarithmic negativity of Eq.~(\ref{eq:logneg}) from the trace norm of the partially transposed joint state. The cat-state fidelity is $F_{\text{cat}} = \max\,\langle \text{cat}|\rho_{\text{field}}|\text{cat}\rangle$ over normalized states $|\text{cat}\rangle \propto |\beta\rangle + e^{i\theta}|{-\beta}\rangle$, with $\beta$ scanned in a neighborhood of $i\sqrt{\bar{n}}$ and $\theta \in [0, 2\pi)$.
 
-\textit{Parameters.} We work in dimensionless units with $g = 1$. The characteristic timescales are the collapse time $t_c \approx 1/g$ and the revival time $t_r = 2\pi\sqrt{\bar{n}}/g$. Table~\ref{tab:params} summarizes the simulation parameters.
+\textit{Parameters.} We work in dimensionless units with $g = 1$. The characteristic timescales are the collapse time $t_c \equiv 1/g$ and the revival time $t_r = 2\pi\sqrt{\bar{n}}/g$. Table~\ref{tab:params} summarizes the simulation parameters.
 
 \begin{table}[h]
 \centering
@@ -333,8 +341,9 @@ All simulations are performed using QuTiP (Quantum Toolbox in Python, version~5.
 Simulation & $\bar{n}$ & $N_{\text{cav}}$ & $\kappa/g$ & $\gamma/g$ \\
 \hline
 Wigner evolution & 10 & 35 & 0 & 0 \\
-Entanglement comparison & 10 & 50 & 0 & 0 \\
-$\bar{n}$ scaling & 1--36 & adaptive & 0 & 0 \\
+Entanglement (coherent, Fock) & 10 & 50 & 0 & 0 \\
+Entanglement (thermal, squeezed) & 10 & 150 & 0 & 0 \\
+$\bar{n}$ scaling & 1--36 & $3\bar{n}+20$ & 0 & 0 \\
 Dissipative dynamics & 10 & 35--50 & 0--0.2 & 0 \\
 \hline\hline
 \end{tabular}
@@ -354,31 +363,31 @@ All simulation code is available as Python scripts at \url{https://github.com/al
 
 We first consider unitary JC dynamics with the atom initially excited and the field in a coherent state $|\alpha\rangle$ with $\bar{n} = |\alpha|^2 = 10$. Figure~\ref{fig:inversion_snapshots} shows the atomic inversion $\langle\sigma_z(t)\rangle$, exhibiting the collapse-revival structure: rapid Rabi oscillations that dephase by $t \approx 2/g$, a quiescent interval, and a revival centered at $t_r \approx 2\pi\sqrt{10}/g \approx 19.9/g$.
 
-The central computational result of this section is shown in Fig.~\ref{fig:wigner_evolution}, which displays the Wigner function of the reduced cavity field at six characteristic times. At $t = 0$, the Wigner function is a Gaussian displaced to $x \approx 4.5$, consistent with the initial coherent state. As the system evolves through the collapse region ($t \approx 2/g$), the distribution spreads along the circle $x^2 + p^2 = 2\bar{n}$ in phase space. At the midpoint of the collapse--revival cycle ($t = t_r/2$), the Wigner function develops two well-separated lobes connected by interference fringes with alternating positive and negative values, the signature of a Schr\"{o}dinger cat state, $|\Psi_{\text{cat}}\rangle \approx (|\alpha_+\rangle + e^{i\phi}|\alpha_-\rangle)/\sqrt{2}$.
+The central computational result of this section is shown in Fig.~\ref{fig:wigner_evolution}, which displays the Wigner function of the reduced cavity field at six characteristic times. At $t = 0$, the Wigner function is a Gaussian displaced to $x \approx 4.5$, consistent with the initial coherent state. As the system evolves through the collapse region ($t \approx 2/g$), the distribution spreads along the circle $x^2 + p^2 = 2\bar{n}$ in phase space. At the midpoint of the collapse--revival cycle ($t = t_r/2$), the Wigner function develops two well-separated lobes connected by interference fringes with alternating positive and negative values, the signature of a Schr\"{o}dinger cat state, $|\Psi_{\text{cat}}\rangle \approx \mathcal{N}(|\beta\rangle + e^{i\theta}|{-\beta}\rangle)$ with $\beta \approx i\sqrt{\bar{n}}$: the two components sit on the $p$ axis, rotated by $\pm\pi/2$ from the initial coherent amplitude.
 
-Figure~\ref{fig:cat_detail} provides a detailed view of this cat state. The cross-section $W(x, p = 0)$ shows deep negative excursions reaching $W \approx -0.22$, with Wigner negativity volume $\delta = 0.43$ (compared to $\delta = 0$ at $t = 0$). The interference fringes have characteristic spacing $\Delta x \approx \pi/\sqrt{2\bar{n}} \approx 0.7$, set by the separation of the two coherent components. These fringes are the phase-space manifestation of quantum interference between macroscopically distinguishable field states and serve as a definitive marker of non-classicality.
+Figure~\ref{fig:cat_detail} provides a detailed view of this cat state. The cross-section $W(x, p = 0)$ shows deep negative excursions reaching $W \approx -0.25$, with Wigner negativity volume $\delta = 0.85$ (compared to $\delta = 0$ at $t = 0$). The best-fitting two-component cat has fidelity $F_{\text{cat}} = 0.78$ with the reduced field state, whose purity is $\mathcal{P} = 0.96$: the field is a nearly pure cat state rather than one branch of an entangled atom--field pair (Sec.~\ref{sec:entropy_results}). The relative phase of the fit is $\theta \approx 1.2\pi$ and the photon-number parity is $\langle(-1)^{\hat{n}}\rangle = -0.64$, so the JC cat is closer to an odd than to an even cat, and its photon-number distribution displays the corresponding odd-$n$ comb; its fidelity with the even cat $|\alpha\rangle + |{-\alpha}\rangle$ on the real axis is essentially zero. The interference fringes have characteristic spacing $\Delta x \approx \pi/\sqrt{2\bar{n}} \approx 0.7$, set by the separation of the two coherent components. These fringes are the phase-space manifestation of quantum interference between macroscopically distinguishable field states and serve as a definitive marker of non-classicality.
 
-As the system approaches the revival time, the two lobes merge and the Wigner function partially re-localizes, though with residual non-classical features ($\delta = 0.15$ at $t = t_r$). The revival is not exact: higher-order terms in the photon-number distribution prevent perfect recurrence.
+As the system approaches the revival time, the two lobes merge and the Wigner function partially re-localizes, though with residual non-classical features ($\delta = 0.31$ at $t = t_r$). The revival is not exact: higher-order terms in the photon-number distribution prevent perfect recurrence.
 
 
 \subsection{Atom--field entanglement dynamics}
 \label{sec:entropy_results}
 
-We now quantify atom--field entanglement using the von Neumann entropy $S(\rho_{\text{atom}})$, comparing four initial field states with the same mean photon number $\bar{n} = 10$: coherent, thermal, squeezed vacuum, and Fock.
+We now quantify atom--field entanglement, comparing four initial field states with the same mean photon number $\bar{n} = 10$: coherent, thermal, squeezed vacuum, and Fock. For the three pure initial fields the global state remains pure and $S(\rho_{\text{atom}})$ is the entanglement entropy; for the thermal field we report both $S$ and the logarithmic negativity $E_{\mathcal{N}}$ of Eq.~(\ref{eq:logneg}).
 
-Figure~\ref{fig:entanglement_comparison} shows the inversion and entropy for all four cases. The principal observations are as follows.
+Figure~\ref{fig:entanglement_comparison} shows the inversion, entropy, and negativity for all four cases. The principal observations are as follows.
 
-\textit{Coherent state.} The entropy rises from $S = 0$, saturates near $S \approx 1$~bit during the collapse period, and exhibits a clear dip to $S \approx 0.15$~bits at the revival time $t_r$. The near-maximal entanglement during the quiescent interval is correlated with cat-state formation in the field: the atom and field are maximally entangled precisely when the field is in a cat-like superposition. This confirms the entropy--inversion correspondence predicted by Phoenix and Knight~\cite{phoenix1988}.
+\textit{Coherent state.} The entropy rises from $S = 0$ to $\approx 1$~bit within $t \approx 2/g$, as the Rabi oscillations collapse. It then decreases steadily and reaches a minimum $S \approx 0.14$~bit ($E_{\mathcal{N}} = 0.36$) at $t = t_r/2 \approx 9.9/g$, in the middle of the quiescent interval. This is the half-revival disentanglement predicted by Gea-Banacloche~\cite{gea-banacloche1990}: the atom returns close to a pure state while the field is in the cat state of Fig.~\ref{fig:cat_detail}. Toward the revival the entanglement grows again; at $t_r$ the entropy is $S \approx 0.79$~bit and oscillates between about 0.5 and 1 at the Rabi frequency. The cat state and the minimum of entanglement therefore coincide: the field is a nearly pure superposition, not one branch of an entangled pair.
 
-\textit{Thermal state.} The entropy rises to $S = 1$~bit within $t \sim 2/g$ and remains at the maximum for all subsequent times. No dip occurs, consistent with the absence of revivals. The broad Bose--Einstein distribution produces irreversible dephasing.
+\textit{Thermal state.} The reduced entropy rises to $S = 1$~bit within $t \sim 1/g$ and stays within a few percent of the maximum thereafter, with no dip at $t_r/2$. This does not indicate maximal entanglement: the global state is mixed, and the logarithmic negativity remains small, $E_{\mathcal{N}} \approx 0.23$ on average (maximum 0.33). Most of the reduced-atom entropy is classical correlation inherited from the broad Bose--Einstein photon distribution, whose spread of Rabi frequencies ($\sigma_n \sim \bar{n}$) dephases the oscillations within a Rabi period and leaves no resolved revival in the simulated window.
 
-\textit{Squeezed vacuum.} The dynamics are intermediate between the coherent and thermal cases: a rapid rise to near-maximal entropy followed by complex quasi-periodic modulations, but no clean revival dip. The squeezed state's super-Poissonian photon statistics lead to faster collapse and weaker revivals than the coherent case.
+\textit{Squeezed vacuum.} The dynamics are intermediate: a rapid rise to $S \approx 1$~bit followed by quasi-periodic partial dips (to $S \approx 0.7$--$0.8$), but no clean half-revival disentanglement. The super-Poissonian photon statistics of the squeezed vacuum (only even $n$ populated, variance $2\bar{n}(\bar{n}+1)$) spread the Rabi frequencies over a much wider range than the Poisson distribution.
 
-\textit{Fock state.} With a definite photon number, there is only a single Rabi frequency $\Omega_n = 2g\sqrt{n}$, and the entropy oscillates periodically between 0 and 1~bit with period $\pi/(g\sqrt{n})$. No collapse or revival occurs because there is no dephasing.
+\textit{Fock state.} With a definite photon number there is a single Rabi frequency, $\Omega_{10} = 2g\sqrt{11}$ [Eq.~(\ref{eq:rabi_evolution})]. The inversion oscillates with period $\pi/(g\sqrt{11}) \approx 0.95/g$, and the entropy, which depends on the populations only through the binary entropy $h(P_e)$ with $h(p) = h(1-p)$, oscillates between 0 and 1~bit with half that period, $\pi/(2g\sqrt{11}) \approx 0.47/g$ [Fig.~\ref{fig:entanglement_comparison}(b)]. No collapse or revival occurs because there is no dephasing.
 
-Figure~\ref{fig:coherent_detail} shows the coherent-state case in greater detail, plotting inversion, entropy, and field purity $\mathcal{P}(t)$ together. The field purity drops to $\mathcal{P} \approx 0.50$ during collapse, consistent with the field being in a near-equal superposition of two states, and partially recovers at revival. This three-observable portrait provides a complete picture: the collapse simultaneously produces maximal entanglement ($S \to 1$), minimal field purity ($\mathcal{P} \to 0.5$), and a cat-like Wigner function.
+Figure~\ref{fig:coherent_detail} shows the coherent-state case in greater detail, plotting inversion, entropy, and field purity $\mathcal{P}(t)$ together. During the collapse the field purity drops to $\mathcal{P} \approx 0.5$: the reduced field is then an incoherent \emph{mixture} of two nearly orthogonal branches, each correlated with a different atomic state (a coherent superposition of the two branches would have $\mathcal{P} = 1$). As the atomic branches reconverge, the purity climbs to $\mathcal{P} = 0.96$ at $t_r/2$, where the field is the nearly pure cat, and falls again toward the revival ($\mathcal{P} = 0.64$ at $t_r$). The three observables thus tell a single story: entanglement during the collapse turns the reduced field into a two-branch mixture, and disentanglement at $t_r/2$ restores the field's coherence in the form of a cat state.
 
-Figure~\ref{fig:entropy_nbar} shows how the entanglement dynamics depend on $\bar{n}$. For $\bar{n} = 1$, the entropy oscillates quasi-periodically without a clean collapse or revival. As $\bar{n}$ increases, the collapse becomes faster (occurring at $t_c \sim 1/g$ independent of $\bar{n}$), the plateau at $S \approx 1$ broadens, and the revival sharpens. For $\bar{n} \geq 9$, the revival is clearly resolved. This scaling is consistent with the analytical estimates of Eberly \textit{et al.}~\cite{eberly1980}.
+Figure~\ref{fig:entropy_nbar} shows how these dynamics depend on $\bar{n}$. For $\bar{n} = 1$ the entropy oscillates quasi-periodically without a clean collapse. As $\bar{n}$ increases, the collapse still occurs at $t \sim 1/g$, but the half-revival minimum at $\pi\sqrt{\bar{n}}/g$ moves out and deepens ($S_{\min} \approx 0.16$, 0.11, 0.07, and 0.05~bit for $\bar{n} = 9$, 16, 25, and 36), and the entangled plateau around the revival broadens. For $\bar{n} \gtrsim 9$ the disentanglement and the subsequent re-entanglement are cleanly resolved, consistent with the large-$\bar{n}$ analysis of Gea-Banacloche~\cite{gea-banacloche1991}.
 
 
 \subsection{Decoherence of non-classical features}
@@ -386,7 +395,7 @@ Figure~\ref{fig:entropy_nbar} shows how the entanglement dynamics depend on $\ba
 
 We now include cavity photon loss ($\kappa > 0$) via Eq.~(\ref{eq:lindblad}) and study its effect on the Wigner function and entanglement.
 
-Figure~\ref{fig:wigner_decoherence} shows the Wigner function at the cat-state time $t = t_r/2$ for $\kappa/g = 0,\, 0.02,\, 0.05,\, 0.10$. The interference fringes are progressively destroyed: at $\kappa/g = 0.02$, the Wigner negativity drops from $\delta = 0.43$ to $\delta = 0.07$; at $\kappa/g = 0.10$, the negativity is effectively zero ($\delta < 0.001$). Table~\ref{tab:decoherence} summarizes these results.
+Figure~\ref{fig:wigner_decoherence} shows the Wigner function at the cat-state time $t = t_r/2$ for $\kappa/g = 0,\, 0.02,\, 0.05,\, 0.10$. The interference fringes are progressively destroyed: at $\kappa/g = 0.02$, the Wigner negativity drops from $\delta = 0.85$ to $\delta = 0.14$; at $\kappa/g = 0.10$, the negativity is effectively zero ($\delta = 0.002$). Table~\ref{tab:decoherence} summarizes these results; the values are converged to three digits between $N_{\text{cav}} = 35$ and 50.
 
 \begin{table}[h]
 \centering
@@ -396,19 +405,19 @@ Figure~\ref{fig:wigner_decoherence} shows the Wigner function at the cat-state t
 \hline\hline
 $\kappa/g$ & Wigner negativity $\delta$ & Field purity $\mathcal{P}$ & Cat state visible? \\
 \hline
-0.00 & 0.425 & 0.960 & Yes \\
-0.02 & 0.071 & 0.460 & Marginal \\
-0.05 & 0.011 & 0.418 & No \\
-0.10 & $<0.001$ & 0.386 & No \\
+0.00 & 0.851 & 0.960 & Yes \\
+0.02 & 0.143 & 0.460 & Marginal \\
+0.05 & 0.022 & 0.418 & No \\
+0.10 & 0.002 & 0.386 & No \\
 \hline\hline
 \end{tabular}
 \end{table}
 
-This extreme sensitivity is expected: the decoherence rate scales as $\kappa\bar{n}$~\cite{zurek2003}. For $\bar{n} = 10$, even $\kappa/g = 0.02$ gives $\kappa\bar{n}/g = 0.2$, sufficient to wash out the interference over the $t_r/2 \approx 10/g$ evolution time.
+This extreme sensitivity is expected: the fringe decoherence rate is $2\kappa\bar{n}$ (Sec.~\ref{sec:lindblad}). For $\bar{n} = 10$, even $\kappa/g = 0.02$ gives a fringe-decoherence time $1/(2\kappa\bar{n}) = 2.5/g$, a quarter of the cat-formation time $t_r/2 \approx 10/g$, which suffices to wash out most of the interference while the two Gaussian lobes, which decay only at the rate $\kappa$, persist.
 
-Figure~\ref{fig:dissipative_entropy} shows the inversion and entropy under dissipation. Two effects are visible: (i) the Rabi oscillations decay as the inversion relaxes toward $\langle\sigma_z\rangle \to -1$ (the atom settles to its ground state as photons leak out), and (ii) the entropy saturates at a non-zero value, reflecting the mixed-state character of the dissipative dynamics. The revival feature in the entropy is progressively smeared: at $\kappa/g = 0.05$ it is barely visible; at $\kappa/g = 0.20$ it is absent entirely.
+Figure~\ref{fig:dissipative_entropy} shows the inversion, the reduced entropy, and the logarithmic negativity under dissipation. Three effects are visible. (i) The Rabi revival is damped and the inversion relaxes toward $\langle\sigma_z\rangle \to -1$ as photons leak out; for $\kappa/g = 0.2$ the atom is essentially in its ground state by $gt \approx 30$. (ii) The reduced entropy no longer measures entanglement: for $\kappa/g \geq 0.05$ it saturates near 1~bit at late times while the negativity decays toward zero ($E_{\mathcal{N}} = 0.14$, 0.02, and 0.00 at $gt = 30$ for $\kappa/g = 0.05$, 0.10, and 0.20). (iii) The atom--field entanglement at $t_r/2$ is comparatively robust: $E_{\mathcal{N}}(t_r/2) \approx 0.35$ for all $\kappa/g \leq 0.1$, close to the unitary value 0.36, even though the entropy minimum is progressively filled in [$S(t_r/2) = 0.14$, 0.16, 0.27, and 0.49 for $\kappa/g = 0$, 0.01, 0.05, and 0.10] and the cat fringes of Table~\ref{tab:decoherence} are already gone at $\kappa/g = 0.05$. Cavity loss thus destroys the internal coherence of the field cat long before it changes the (small) residual entanglement between atom and field.
 
-These results demonstrate the challenge of maintaining quantum coherence: to observe collapse-revival dynamics and cat-state formation with $\bar{n} = 10$, one requires $g/\kappa \gtrsim 50$. This condition is routinely achieved in microwave cavity QED~\cite{haroche2006} and circuit QED~\cite{blais2021}, but remains an engineering challenge in optical cavities.
+These results demonstrate the challenge of maintaining quantum coherence. By the operational criterion $\delta > 0.05$ at $t_r/2$, cat-state formation with $\bar{n} = 10$ requires $\kappa/g \lesssim 0.03$, i.e.\ $g/\kappa \gtrsim 30$; the threshold depends on $\bar{n}$, on the observation time, and on the chosen figure of merit (a full map of $\delta$ and $F_{\text{cat}}$ over the $(\bar{n}, \kappa/g)$ plane is provided with the code). This condition is routinely achieved in microwave cavity QED~\cite{haroche2006} and circuit QED~\cite{blais2021}, but remains an engineering challenge in optical cavities.
 
 
 %% ============================================================
@@ -423,7 +432,7 @@ The Glauber--Sudarshan $P$-distribution~\cite{glauber1963, sudarshan1963} provid
 
 Photon statistics provide experimentally accessible tests. Sub-Poissonian statistics (Mandel $Q < 0$) or photon antibunching ($g^{(2)}(0) < 1$) cannot occur with classical fields. The observation of $g^{(2)}(0) \approx 0$ in single-atom fluorescence~\cite{kimble1977} was the first definitive proof of quantum light. Conversely, photon bunching ($g^{(2)}(0) = 2$) is expected for thermal light and does not imply non-classicality.
 
-Squeezing below the vacuum level is another definitive quantum signature. No classical state can have less noise in any quadrature than the vacuum. The injection of 10~dB of squeezed vacuum into LIGO has improved gravitational-wave sensitivity by roughly 40\%, increasing the event detection rate~\cite{tse2019}.
+Squeezing below the vacuum level is another definitive quantum signature. No classical state can have less noise in any quadrature than the vacuum. The injection of squeezed vacuum into the Advanced LIGO detectors has reduced the quantum shot noise by up to $\approx 3$~dB at frequencies above $\sim 50$~Hz, which was estimated to raise the detection rate for binary-neutron-star mergers by 40--50\%~\cite{tse2019}.
 
 These criteria matter because non-classical light enables quantum technologies that surpass classical limits: squeezed states improve interferometric sensitivity beyond the standard quantum limit; entangled photon pairs enable quantum key distribution~\cite{ekert1991}; and NOON states can achieve Heisenberg-limited phase sensitivity scaling as $1/N$ rather than the shot-noise $1/\sqrt{N}$.
 
@@ -442,9 +451,9 @@ The collapse-revival phenomenon remained a theoretical prediction for over two d
 
 \textit{Optical cavities (1992 onwards).} In the optical domain, Thompson, Rempe, and Kimble~\cite{thompson1992} observed vacuum Rabi splitting in the transmission spectrum of a Fabry--P\'{e}rot cavity containing single cesium atoms, confirming the dressed-state structure at $n = 1$. Full time-domain collapse-revival experiments in optical cavities are more challenging due to shorter cavity lifetimes, but the spectroscopic signatures of the quantized JC interaction have been well established.
 
-\textit{Circuit QED (2000s onwards).} In circuit QED, a superconducting qubit (typically a transmon) is coupled to a microwave resonator on a chip~\cite{blais2021}. Typical parameters are $g/2\pi \sim 100$--$300$~MHz and $\kappa/2\pi \sim 1$~MHz, giving $g/\kappa \sim 100$--$300$. This satisfies the $g/\kappa \gtrsim 50$ threshold identified in Sec.~\ref{sec:decoherence} for observing cat-state formation with $\bar{n} = 10$. Hofheinz \textit{et al.}~\cite{hofheinz2009} generated arbitrary Fock states and their superpositions in a coplanar waveguide resonator coupled to a phase qubit, verifying the $\sqrt{n+1}$ scaling of the Rabi frequency. Ofek \textit{et al.}~\cite{ofek2016} used the JC interaction to implement quantum error correction with cat states encoded in a superconducting cavity, reaching the break-even point where error correction extends the logical qubit lifetime beyond the physical components.
+\textit{Circuit QED (2000s onwards).} In circuit QED, a superconducting qubit (typically a transmon) is coupled to a microwave resonator on a chip~\cite{blais2021}. Typical parameters are $g/2\pi \sim 100$--$300$~MHz and $\kappa/2\pi \sim 1$~MHz, giving $g/\kappa \sim 100$--$300$. This satisfies the $g/\kappa \gtrsim 30$ threshold identified in Sec.~\ref{sec:decoherence} for observing cat-state formation with $\bar{n} = 10$. Hofheinz \textit{et al.}~\cite{hofheinz2009} generated arbitrary Fock states and their superpositions in a coplanar waveguide resonator coupled to a phase qubit, verifying the $\sqrt{n+1}$ scaling of the Rabi frequency. Ofek \textit{et al.}~\cite{ofek2016} used the JC interaction to implement quantum error correction with cat states encoded in a superconducting cavity, reaching the break-even point where error correction extends the logical qubit lifetime beyond the physical components.
 
-Our dimensionless simulation results (with $g = 1$) can be directly mapped to any of these platforms by substituting the physical value of $g$. For the microwave cavity QED parameters above, the revival time for $\bar{n} = 10$ is $t_r = 2\pi\sqrt{10}/g \sim 10^{-4}$~s, much shorter than the cavity lifetime $1/\kappa \sim 1$~s. For circuit QED, $t_r \sim 10$~ns, compared to cavity lifetimes of $\sim 1$~$\mu$s. In both cases, several complete collapse-revival cycles can unfold within the coherence time of the system.
+Our dimensionless simulation results (with $g = 1$) can be directly mapped to any of these platforms by substituting the physical value of $g$. For the microwave cavity QED parameters above ($g = 2\pi \times 50$~kHz), the revival time for $\bar{n} = 10$ is $t_r = 2\pi\sqrt{10}/g \approx 60~\mu$s, much shorter than the cavity lifetime $1/\kappa \approx 0.16$~s. For circuit QED with $g/2\pi = 100$--$300$~MHz, $t_r \approx 10$--$30$~ns, compared with a cavity lifetime $1/\kappa \approx 160$~ns for $\kappa/2\pi = 1$~MHz. In both cases the first revival occurs well within the coherence time of the system; the cat-state fringes, which decohere at the enhanced rate $2\kappa\bar{n}$, survive only where $\kappa/g \lesssim 0.01$--$0.03$, as in the microwave and circuit-QED regimes.
 
 
 %% ============================================================
@@ -453,7 +462,7 @@ Our dimensionless simulation results (with $g = 1$) can be directly mapped to an
 \section{Conclusions}
 \label{sec:conclusions}
 
-We have presented a computational study of quantum light--matter interaction in the Jaynes--Cummings model that goes beyond standard textbook treatments in two respects. First, time-resolved Wigner function snapshots directly visualize the formation of a Schr\"{o}dinger cat state during the collapse of Rabi oscillations, with Wigner negativity volume $\delta = 0.43$ at half the revival time. The interference fringes in the Wigner function provide a quantitative, phase-space signature of non-classicality that is destroyed by cavity decay rates as low as $\kappa/g = 0.02$. Second, a systematic comparison of entanglement entropy across coherent, thermal, squeezed, and Fock initial field states demonstrates that the entropy--inversion correspondence first predicted by Phoenix and Knight~\cite{phoenix1988} is unique to the coherent state: only for Poissonian photon statistics do clean entropy dips coincide with Rabi revivals.
+We have presented a computational study of quantum light--matter interaction in the Jaynes--Cummings model that goes beyond standard textbook treatments in two respects. First, time-resolved Wigner function snapshots directly visualize the formation of a Schr\"{o}dinger cat state at half the revival time, with Wigner negativity volume $\delta = 0.85$, purity 0.96, and cat fidelity 0.78. The cat coincides with a \emph{minimum} of atom--field entanglement ($S \approx 0.14$~bit), so it is a nearly pure state of the field alone, whereas during the preceding collapse the atom and field are maximally entangled and the reduced field is a two-branch mixture. The interference fringes in the Wigner function provide a quantitative, phase-space signature of non-classicality that is destroyed by cavity decay rates as low as $\kappa/g = 0.02$, while the residual atom--field negativity at $t_r/2$ is much less affected. Second, a systematic comparison across coherent, thermal, squeezed, and Fock initial fields demonstrates that the half-revival disentanglement first analyzed by Gea-Banacloche~\cite{gea-banacloche1990} and by Phoenix and Knight~\cite{phoenix1988, phoenix1991} is unique to the coherent state, and that for a thermal field a saturated reduced entropy of one bit conceals a logarithmic negativity of only $\approx 0.2$: once the global state is mixed, the reduced entropy must not be read as an entanglement measure.
 
 These results illustrate how the quantum statistics of the field, encoded in the photon-number distribution, determine the entanglement dynamics and the fragility of non-classical features under decoherence. The computational framework is straightforward to extend to multi-mode cavities, ultrastrong coupling regimes, and quantum trajectory simulations of individual measurement records.
 
@@ -473,14 +482,14 @@ These results illustrate how the quantum statistics of the field, encoded in the
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{fig_wigner_evolution.png}
-    \caption{Wigner function $W(x,p)$ of the reduced cavity field state at six characteristic times during Jaynes--Cummings evolution ($\bar{n} = 10$, $\Delta = 0$). At $t = 0$, the field is a coherent-state Gaussian. By $t = 2\,t_c$ (collapse onset), the distribution begins to spread. At $t = t_r/2$, a Schr\"{o}dinger cat state has formed: two distinct lobes connected by interference fringes with strong Wigner negativity ($\delta = 0.43$). By $t = t_r$, the field partially re-localizes at revival.}
+    \caption{Wigner function $W(x,p)$ of the reduced cavity field state at six characteristic times during Jaynes--Cummings evolution ($\bar{n} = 10$, $\Delta = 0$). At $t = 0$, the field is a coherent-state Gaussian. By $t = 2\,t_c$ (collapse onset), the distribution begins to spread. At $t = t_r/2$, a Schr\"{o}dinger cat state has formed: two distinct lobes at $p \approx \pm\sqrt{2\bar{n}}$ connected by interference fringes with strong Wigner negativity ($\delta = 0.85$); at this time the atom and field are approximately disentangled (Sec.~\ref{sec:entropy_results}). By $t = t_r$, the field partially re-localizes at revival ($\delta = 0.31$).}
     \label{fig:wigner_evolution}
 \end{figure*}
 
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{fig_cat_state_detail.png}
-    \caption{Detailed view of the Schr\"{o}dinger cat state formed at $t = t_r/2$. Left: Wigner function contour plot showing two coherent-state lobes and interference fringes. Right: cross-section $W(x, p=0)$ with negative regions (shaded red) reaching $W \approx -0.22$. The negativity confirms the non-classical character of this dynamically generated state.}
+    \caption{Detailed view of the Schr\"{o}dinger cat state formed at $t = t_r/2$. Left: Wigner function contour plot showing two coherent-state lobes and interference fringes. Right: cross-section $W(x, p=0)$ with negative regions (shaded red) reaching $W \approx -0.25$; the fringe spacing is $\pi/\sqrt{2\bar{n}} \approx 0.70$. The negativity ($\delta = 0.85$) confirms the non-classical character of this dynamically generated state, whose fidelity with the best-fitting two-component cat is 0.78.}
     \label{fig:cat_detail}
 \end{figure*}
 
@@ -494,59 +503,59 @@ These results illustrate how the quantum statistics of the field, encoded in the
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{fig_entanglement_comparison.png}
-    \caption{Comparison of Jaynes--Cummings dynamics for four initial field states with $\bar{n} = 10$. Top: atomic inversion $\langle\sigma_z\rangle$. Bottom: von Neumann entropy $S(\rho_{\text{atom}})$ of the reduced atomic state. The coherent state (blue) shows clean collapse-revival in both observables; the Fock state (orange) oscillates periodically; the thermal state (red) dephases irreversibly; the squeezed vacuum (green) shows intermediate behavior. The dashed purple line marks the revival time $t_r$.}
+    \caption{Comparison of Jaynes--Cummings dynamics for four initial field states with $\bar{n} = 10$. (a) Atomic inversion $\langle\sigma_z\rangle$ for the coherent (blue), thermal (red), and squeezed-vacuum (green) fields. (b) Fock state $|10\rangle$ over a short window: the inversion oscillates with period $\pi/(g\sqrt{11})$ and the entropy (plotted as $2S - 1$) with half that period. (c) Reduced-atom entropy $S(\rho_{\text{atom}})$ (solid) and logarithmic negativity $E_{\mathcal{N}}$ (dashed). The coherent state collapses to $S \approx 1$~bit and disentangles at $t_r/2$ (dotted line); the thermal state saturates at $S = 1$~bit but has $E_{\mathcal{N}} \approx 0.2$ because its global state is mixed; the squeezed vacuum shows only partial dips. The dashed purple line marks the revival time $t_r$.}
     \label{fig:entanglement_comparison}
 \end{figure*}
 
-\begin{figure}[t]
+\begin{figure*}[t]
     \centering
-    \includegraphics[width=\columnwidth]{fig_coherent_entropy_purity.png}
-    \caption{Detailed coherent-state dynamics ($\bar{n} = 10$). Top: atomic inversion. Middle: entanglement entropy $S(\rho_{\text{atom}})$, peaking at $\approx 1$~bit during collapse and dipping at revival. Bottom: field purity $\mathcal{P} = \text{Tr}[\rho_{\text{field}}^2]$, reaching a minimum of $\approx 0.5$ during collapse (consistent with a two-component cat state). The dashed line marks $t_r$.}
+    \includegraphics[width=0.85\textwidth]{fig_coherent_entropy_purity.png}
+    \caption{Detailed coherent-state dynamics ($\bar{n} = 10$). Top: atomic inversion. Middle: entanglement entropy $S(\rho_{\text{atom}})$, peaking near 1~bit during the collapse and reaching its minimum ($\approx 0.14$~bit) at $t_r/2$, where the atom and field disentangle and the field is the cat state of Fig.~\ref{fig:cat_detail}. Bottom: field purity $\mathcal{P} = \text{Tr}[\rho_{\text{field}}^2]$, dropping to $\approx 0.5$ during the collapse (a two-branch mixture, the field being entangled with the atom) and rising to 0.96 at $t_r/2$ (nearly pure cat). Dotted and dashed lines mark $t_r/2$ and $t_r$.}
     \label{fig:coherent_detail}
-\end{figure}
+\end{figure*}
 
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{fig_entropy_nbar_scaling.png}
-    \caption{Entanglement entropy $S(\rho_{\text{atom}})$ for coherent-state fields with $\bar{n} = 1,\, 4,\, 9,\, 16,\, 25,\, 36$. As $\bar{n}$ increases, the collapse time remains $\sim 1/g$ while the revival time grows as $t_r = 2\pi\sqrt{\bar{n}}/g$, producing a broader plateau of near-maximal entanglement. Clean revivals (entropy dips) emerge for $\bar{n} \gtrsim 9$.}
+    \caption{Entanglement entropy $S(\rho_{\text{atom}})$ for coherent-state fields with $\bar{n} = 1,\, 4,\, 9,\, 16,\, 25,\, 36$. As $\bar{n}$ increases, the collapse time remains $\sim 1/g$ while the half-revival time $\pi\sqrt{\bar{n}}/g$ (dotted) and the revival time $t_r = 2\pi\sqrt{\bar{n}}/g$ (dashed) grow as $\sqrt{\bar{n}}$. The entropy minimum at $t_r/2$ (atom--field disentanglement) deepens with $\bar{n}$ and is cleanly resolved for $\bar{n} \gtrsim 9$.}
     \label{fig:entropy_nbar}
 \end{figure*}
 
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{fig_dissipative_entanglement.png}
-    \caption{Effect of cavity decay on JC dynamics ($\bar{n} = 10$). Top: atomic inversion for $\kappa/g = 0$--$0.20$. Bottom: entanglement entropy. Increasing $\kappa$ damps the Rabi oscillations, smears the revival feature in the entropy, and drives the system toward a mixed state.}
+    \caption{Effect of cavity decay on JC dynamics ($\bar{n} = 10$). Top: atomic inversion for $\kappa/g = 0$--$0.20$. Middle: reduced-atom entropy, which for $\kappa > 0$ measures total (classical plus quantum) correlations. Bottom: logarithmic negativity $E_{\mathcal{N}}$, a proper entanglement monotone for the mixed states produced by dissipation. Increasing $\kappa$ damps the revival, drives the atom toward its ground state, and suppresses the late-time negativity even where the reduced entropy stays near 1~bit. Dotted and dashed lines mark $t_r/2$ and $t_r$.}
     \label{fig:dissipative_entropy}
 \end{figure*}
 
 % Original figures from the course paper, retained as supplementary
-\begin{figure}[t]
+\begin{figure*}[t]
     \centering
-    \includegraphics[width=\columnwidth]{jaynes_cummings_comparison.png}
-    \caption{Atomic inversion for coherent (left) and thermal (right) field states at $\bar{n} = 4,\, 9,\, 14,\, 19,\, 24$. Coherent states show structured collapse-revival dynamics that sharpen with increasing $\bar{n}$; thermal states show rapid irreversible dephasing. Figure generated by Nguyen Khoi Nguyen, Boston University, 2024.}
+    \includegraphics[width=0.85\textwidth]{jaynes_cummings_comparison.png}
+    \caption{Atomic inversion $\sum_n p(n)\cos(2g\sqrt{n+1}\,t)$ for coherent (left) and thermal (right) field states at $\bar{n} = 4,\, 9,\, 14,\, 19,\, 24$; time in units of $1/g$. Coherent states show collapse-revival dynamics whose revivals, at multiples of $t_r = 2\pi\sqrt{\bar{n}}/g$, become more widely separated and better resolved as $\bar{n}$ increases; thermal states dephase within a Rabi period and show no resolved revival.}
     \label{fig:rabi_collapse_revival}
-\end{figure}
+\end{figure*}
 
 \begin{figure}[t]
     \centering
-    \includegraphics[scale=0.35]{wigner_functions_3d.png}
-    \caption{Static Wigner functions $W(x,p)$ for Fock states ($|0\rangle$, $|1\rangle$, $|6\rangle$, $|7\rangle$), squeezed vacuum ($r = 1.0$, $\phi = 0$ and $\pi/2$), and coherent states ($\alpha = 2$ and $2+2i$). Fock states exhibit ring-like structures and negativity; squeezed states show elliptical distributions; coherent states are displaced Gaussians with no negativity.}
+    \includegraphics[width=\columnwidth]{wigner_functions_3d.png}
+    \caption{Static Wigner functions $W(x,p)$ for Fock states ($|0\rangle$, $|1\rangle$, $|6\rangle$, $|7\rangle$), squeezed vacuum ($r = 1.0$, $\phi = 0$ and $\pi/2$), and coherent states ($\alpha = 2$ and $2+2i$). Fock states exhibit ring-like structures and negativity; squeezed states show elliptical distributions (squeezing axis at angle $\phi/2$); coherent states are displaced Gaussians with no negativity. Phase-space convention $a = (x + ip)/\sqrt{2}$.}
     \label{fig:wigner_quantum_states}
 \end{figure}
 
 \begin{figure}[t]
     \centering
-    \includegraphics[scale=0.45]{wigner_functions_2d.png}
+    \includegraphics[width=\columnwidth]{wigner_functions_2d.png}
     \caption{Contour plots of the Wigner functions from Fig.~\ref{fig:wigner_quantum_states}. The color scale highlights negative regions (blue) as signatures of non-classicality.}
     \label{fig:wigner_2d_quantum_states}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure*}[t]
     \centering
-    \includegraphics[scale=0.6]{mollow_triplet_driving_strength.png}
+    \includegraphics[width=0.8\textwidth]{mollow_triplet_driving_strength.png}
     \caption{Mollow triplet spectra for a driven two-level system at varying Rabi frequencies $\Omega/\gamma = 0.5$--$15$. As the driving strength increases, the single peak splits into three: a central Rayleigh line and two sidebands at $\omega - \omega_L = \pm\Omega$.}
     \label{fig:mollow_triplet}
-\end{figure}
+\end{figure*}
 
 
 \begin{acknowledgments}
@@ -640,6 +649,18 @@ J.~R.~Johansson, P.~D.~Nation, and F.~Nori, Comp.\ Phys.\ Comm.\ \textbf{184}, 1
 
 \bibitem{gea-banacloche1990}
 J.~Gea-Banacloche, Phys.\ Rev.\ Lett.\ \textbf{65}, 3385 (1990).
+
+\bibitem{gea-banacloche1991}
+J.~Gea-Banacloche, Phys.\ Rev.\ A \textbf{44}, 5913 (1991).
+
+\bibitem{phoenix1991}
+S.~J.~D.~Phoenix and P.~L.~Knight, Phys.\ Rev.\ A \textbf{44}, 6023 (1991).
+
+\bibitem{vidal2002}
+G.~Vidal and R.~F.~Werner, Phys.\ Rev.\ A \textbf{65}, 032314 (2002).
+
+\bibitem{plenio2005}
+M.~B.~Plenio, Phys.\ Rev.\ Lett.\ \textbf{95}, 090503 (2005).
 
 \bibitem{kimble1977}
 H.~J.~Kimble, M.~Dagenais, and L.~Mandel, Phys.\ Rev.\ Lett.\ \textbf{39}, 691 (1977).

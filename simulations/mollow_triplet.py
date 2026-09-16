@@ -17,8 +17,12 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
 from qutip import (basis, sigmam, sigmap, sigmaz,
                     correlation_2op_1t, steadystate, expect)
+
+PAPER_FIG = Path(__file__).resolve().parents[1] / 'paper' / 'figures'
+PAPER_FIG.mkdir(parents=True, exist_ok=True)
 
 
 def mollow_spectrum(nu_array, Omega, gamma, Delta=0.0,
@@ -73,6 +77,6 @@ ax.set_title('Mollow Triplet: Dependence on Driving Strength', fontsize=15)
 ax.legend(fontsize=12)
 ax.set_xlim(-20, 20)
 fig.tight_layout()
-fig.savefig('mollow_triplet_driving_strength.png', dpi=300, bbox_inches='tight')
-fig.savefig('mollow_triplet_driving_strength.pdf', bbox_inches='tight')
+fig.savefig(PAPER_FIG / 'mollow_triplet_driving_strength.png', dpi=300, bbox_inches='tight')
+fig.savefig(PAPER_FIG / 'mollow_triplet_driving_strength.pdf', bbox_inches='tight')
 print("Saved: mollow_triplet_driving_strength")

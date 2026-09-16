@@ -17,6 +17,14 @@ from qutip import (
     mesolve, wigner, ptrace, coherent, Qobj
 )
 
+# -- Repo-relative output locations (run from any working directory) --
+from pathlib import Path as _Path
+import tempfile as _tempfile
+_ROOT = _Path(__file__).resolve().parents[2]
+FIG_DIR = _ROOT / 'figures'
+ANIM_DIR = _ROOT / 'animations'
+FIG_DIR.mkdir(exist_ok=True); ANIM_DIR.mkdir(exist_ok=True)
+
 # -- Parameters --
 N_cav = 35
 g = 1.0
@@ -38,7 +46,7 @@ kappa_values = np.linspace(0, 0.15, n_frames)
 tlist_short = np.linspace(0, 0.5 * t_revival, 400)
 xvec = np.linspace(-7, 7, 180)
 
-frame_dir = '/home/claude/deco_frames'
+frame_dir = _tempfile.mkdtemp(prefix='qsol_frames_')
 os.makedirs(frame_dir, exist_ok=True)
 
 global_wlim = 0.25
@@ -103,7 +111,7 @@ durations = [0.12] * n_frames
 durations[0] = 1.5   # pause on pure cat state
 durations[-1] = 1.5  # pause on fully decohered
 
-imageio.mimsave('/home/claude/anim_decoherence.gif', frames,
+imageio.mimsave(f'{ANIM_DIR}/anim_decoherence.gif', frames,
                 duration=durations, loop=0)
 print("Saved: anim_decoherence.gif")
 

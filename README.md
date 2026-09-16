@@ -34,11 +34,13 @@ Computational study of quantum light-matter interaction in the Jaynes-Cummings (
 
 **Five principal results:**
 
-1. Time-resolved Wigner function snapshots showing Schrödinger cat-state formation at $t = t_r/2$ with Wigner negativity $\delta = 0.43$
-2. Systematic comparison of atom-field entanglement entropy across coherent, thermal, squeezed, and Fock initial field states
+1. Time-resolved Wigner function snapshots showing Schrödinger cat-state formation at $t = t_r/2$ with Wigner negativity $\delta = 0.85$, field purity $0.96$ and cat fidelity $F_\text{cat} = 0.78$; at this instant the atom and field approximately **disentangle** (reduced atomic entropy $S \approx 0.14$ bit), so the cat is a nearly pure state of the field alone
+2. Systematic comparison of atom-field entanglement (reduced entropy and logarithmic negativity) across coherent, thermal, squeezed, and Fock initial field states: the half-revival disentanglement occurs only for the coherent field, and for a thermal field a saturated entropy of 1 bit hides a logarithmic negativity of only $\approx 0.2$
 3. Quantitative decoherence study: cavity decay $\kappa/g = 0.02$ reduces cat-state Wigner negativity by over 80%
-4. **Cat-state survival phase diagram**: 2D parameter sweep of $\delta(\bar{n}, \kappa/g)$ mapping the boundary of observable quantum coherence, plus even-cat-state fidelity
-5. **Photon blockade and second-order coherence**: $g^{(2)}(0)$ as a function of coupling strength, drive power, and detuning, demonstrating the quantum-to-classical crossover
+4. **Cat-state survival phase diagram**: 2D parameter sweep of $\delta(\bar{n}, \kappa/g)$ mapping the boundary of observable quantum coherence, plus the best-fit two-component cat fidelity $F_\text{cat}(\bar{n}, \kappa/g)$
+5. **Photon blockade and second-order coherence**: $g^{(2)}(0)$ as a function of coupling strength, drive power, and detuning (drive resonant with a polariton), demonstrating the quantum-to-classical crossover
+
+**Conventions used throughout:** $\delta = \int |W|\,dx\,dp - 1$ (Kenfack–Życzkowski; equal to twice the integrated negative volume), phase space $a = (x + ip)/\sqrt{2}$ (QuTiP default, $\int W\,dx\,dp = 1$), operational collapse time $t_c \equiv 1/g$, revival time $t_r = 2\pi\sqrt{\bar{n}}/g$.
 
 <p align="center">
   <img src="paper/figures/banner_qsol_light_new.png" width="100%">
@@ -86,7 +88,6 @@ Computational study of quantum light-matter interaction in the Jaynes-Cummings (
 - [Simulation Details](#simulation-details)
   - [Parameters](#parameters)
   - [Figure-to-Script Map](#figure-to-script-map)
-- [Repository Structure](#repository-structure)
 - [Quick Start](#quick-start)
 - [Citation](#citation)
 - [License](#license)
@@ -102,7 +103,7 @@ Computational study of quantum light-matter interaction in the Jaynes-Cummings (
   <img src="animations/anim_wigner_evolution.gif" width="750">
 </p>
 
-A coherent state $|\alpha = \sqrt{10}\rangle$ evolves under the resonant JC Hamiltonian. During the collapse of Rabi oscillations, the intracavity field splits into a superposition of two phase-space components — a Schrödinger cat state. **Left:** Wigner function $W(x,p)$ of the reduced cavity field state $\rho_\text{field} = \mathrm{Tr}_\text{atom}[\rho]$, computed on a 200×200 phase-space grid. Interference fringes between the two coherent components produce negative regions ($W < 0$, blue), the hallmark of non-classicality. **Right:** Atomic inversion $\langle\sigma_z\rangle(t)$ with a moving time marker. The animation pauses at the cat-state time ($t = t_r/2$) where the field is maximally entangled with the atom, and at the first revival ($t = t_r = 2\pi\sqrt{\bar{n}}/g$) where the system approximately refactorizes.
+A coherent state $|\alpha = \sqrt{10}\rangle$ evolves under the resonant JC Hamiltonian. During the collapse of Rabi oscillations, the intracavity field splits into a superposition of two phase-space components — a Schrödinger cat state. **Left:** Wigner function $W(x,p)$ of the reduced cavity field state $\rho_\text{field} = \mathrm{Tr}_\text{atom}[\rho]$, computed on a 200×200 phase-space grid. Interference fringes between the two coherent components produce negative regions ($W < 0$, blue), the hallmark of non-classicality. **Right:** Atomic inversion $\langle\sigma_z\rangle(t)$ with a moving time marker. The animation pauses at the cat-state time ($t = t_r/2$), where the atom and field approximately **disentangle** and the field is a nearly pure cat (purity 0.96, $\delta = 0.85$), and at the first revival ($t = t_r = 2\pi\sqrt{\bar{n}}/g$), where the branches rephase and the atom and field are strongly entangled again.
 
 ### Entanglement, Inversion, and Purity
 
@@ -110,7 +111,7 @@ A coherent state $|\alpha = \sqrt{10}\rangle$ evolves under the resonant JC Hami
   <img src="animations/anim_entanglement.gif" width="850">
 </p>
 
-Simultaneous evolution of three complementary observables. **Left:** Wigner function $W(x,p)$. **Center:** Atomic inversion $\langle\sigma_z\rangle(t)$. **Right:** Von Neumann entanglement entropy $S(\rho_\text{atom})$ (red) and field-state purity $\mathrm{Tr}[\rho_\text{field}^2]$ (green). Entropy saturates at 1 bit during the collapse window (atom and field become maximally entangled, cat state forms), while purity drops to ~0.5 — consistent with a statistical mixture of two near-orthogonal coherent components. Both quantities recover partially at the first revival as the composite state approximately refactorizes.
+Simultaneous evolution of three complementary observables. **Left:** Wigner function $W(x,p)$. **Center:** Atomic inversion $\langle\sigma_z\rangle(t)$. **Right:** Von Neumann entanglement entropy $S(\rho_\text{atom})$ (red) and field-state purity $\mathrm{Tr}[\rho_\text{field}^2]$ (green). Entropy rises to 1 bit during the collapse (atom and field maximally entangled) while the field purity drops to ~0.5: the reduced field is then a statistical mixture of two near-orthogonal branches. At $t = t_r/2$ the entropy falls to its minimum ($\approx 0.14$ bit) and the purity peaks at 0.96: the atom and field disentangle and the field is left in a nearly pure cat state. Toward the revival the entanglement grows again ($S \approx 0.8$ bit at $t_r$).
 
 ### Decoherence Destroys the Cat State
 
@@ -118,7 +119,7 @@ Simultaneous evolution of three complementary observables. **Left:** Wigner func
   <img src="animations/anim_decoherence.gif" width="750">
 </p>
 
-Cavity photon loss via the Lindblad dissipator $\kappa \mathcal{D}[a]$ erases quantum coherence on a timescale $\sim 1/(\kappa \bar{n})$, far shorter than the bare cavity lifetime $1/\kappa$. **Left:** Wigner function at the cat-state time $t = t_r/2$ as the decay rate $\kappa/g$ increases from 0 to 0.15. The interference fringes vanish first (they involve high-order coherences), while the two Gaussian lobes persist — the state decoheres into a classical mixture. **Right:** Wigner negativity volume $\delta$ tracking the continuous loss of non-classicality.
+Cavity photon loss via the Lindblad dissipator $\kappa \mathcal{D}[a]$ erases quantum coherence on a timescale $1/(2\kappa \bar{n})$, far shorter than the bare cavity lifetime $1/\kappa$. **Left:** Wigner function at the cat-state time $t = t_r/2$ as the decay rate $\kappa/g$ increases from 0 to 0.15. The interference fringes vanish first (they involve high-order coherences), while the two Gaussian lobes persist — the state decoheres into a classical mixture. **Right:** Wigner negativity volume $\delta$ tracking the continuous loss of non-classicality.
 
 ### Dressed-State Avoided Crossing
 
@@ -134,7 +135,7 @@ The JC dressed states $|n, \pm\rangle$ are the exact eigenstates of the coupled 
   <img src="animations/anim_photon_number.gif" width="750">
 </p>
 
-Time evolution of the intracavity photon number distribution $P(n, t) = \langle n|\rho_\text{field}(t)|n\rangle$ for an initial coherent state with $\bar{n} = 10$. At $t = 0$ the distribution is Poissonian (red dashed envelope). During Rabi oscillations it develops a bimodal structure — photon numbers near $\bar{n}$ split into two peaks separated by $\sim 2\sqrt{\bar{n}}$, the photon-number signature of the cat state at $t = t_r/2$. The distribution partially recovers toward Poissonian at the first revival $t = t_r$, though it never fully returns due to the anharmonic $\sqrt{n+1}$ Rabi spectrum.
+Time evolution of the intracavity photon number distribution $P(n, t) = \langle n|\rho_\text{field}(t)|n\rangle$ for an initial coherent state with $\bar{n} = 10$. At $t = 0$ the distribution is Poissonian (red dashed envelope). The two branches of the JC cat have the *same* amplitude $|\beta| = \sqrt{\bar{n}}$ and opposite phases ($\beta = \pm i\sqrt{\bar{n}}$), so their Poisson envelopes coincide; what $P(n,t)$ shows at $t = t_r/2$ is their **parity interference**: an odd-$n$ comb ($P(\text{odd}) = 0.82$, $\langle(-1)^{\hat n}\rangle = -0.64$), the photon-number signature of a (nearly odd) cat state. At the first revival the comb washes out and a broadened single-hump distribution returns; it never fully returns to Poissonian because of the anharmonic $\sqrt{n+1}$ Rabi spectrum.
 
 ### Bloch Sphere Trajectory
 
@@ -142,7 +143,7 @@ Time evolution of the intracavity photon number distribution $P(n, t) = \langle 
   <img src="animations/anim_bloch_sphere.gif" width="750">
 </p>
 
-The reduced atomic state $\rho\_{\text{atom}} = \mathrm{Tr}\_{\text{field}}[\rho]$ traces a trajectory inside the Bloch sphere. A pure atomic state sits on the surface ($|\mathbf{r}| = 1$); entanglement with the field pulls the Bloch vector toward the center ($|\mathbf{r}| \to 0$, maximally mixed). **Left:** 3D Bloch sphere trajectory color-coded by time. The atom starts at the excited state (red dot, north pole), spirals inward during collapse, reaching near the origin at $t = t_r/2$ (gold star), then spirals partially outward at the first revival (green triangle). **Center:** Bloch vector length $|\mathbf{r}|(t)$. **Right:** Von Neumann entropy $S(\rho\_{\text{atom}})$.
+The reduced atomic state $\rho\_{\text{atom}} = \mathrm{Tr}\_{\text{field}}[\rho]$ traces a trajectory inside the Bloch sphere. A pure atomic state sits on the surface ($|\mathbf{r}| = 1$); entanglement with the field pulls the Bloch vector toward the center ($|\mathbf{r}| \to 0$, maximally mixed). **Left:** 3D Bloch sphere trajectory color-coded by time. The atom starts at the excited state (red dot, north pole) and spirals inward during the collapse (entanglement with the field). Near $t = t_r/2$ (gold star) it returns close to the surface ($|\mathbf{r}| = 0.96$): the atom is nearly pure again because it has **disentangled** from the field, which is then in a cat state. Around the first revival (green triangle) the Bloch vector plunges back inside as the branches rephase and re-entangle. **Center:** Bloch vector length $|\mathbf{r}|(t)$. **Right:** Von Neumann entropy $S(\rho\_{\text{atom}})$.
 
 ### Wigner vs Husimi Q-Function
 
@@ -158,7 +159,7 @@ Side-by-side comparison of the Wigner function $W(x,p)$ (top row) and Husimi Q-f
   <img src="animations/anim_phase_diagram.gif" width="800">
 </p>
 
-The cat state at $t = t_r/2$ is progressively destroyed as cavity decay $\kappa/g$ increases from 0 to 0.12, with $\bar{n} = 10$ held fixed. **Left:** Wigner function $W(x,p)$ of the reduced cavity field. At $\kappa = 0$, the full interference pattern is visible between the two coherent lobes — deep negative fringes certifying a macroscopic quantum superposition. As $\kappa$ increases, the fringes wash out first (they are encoded in high-order off-diagonal elements $\langle n|\rho|n + 2k\rangle$ with $k \gg 1$), while the two classical lobes persist longer. By $\kappa/g \approx 0.04$ the Wigner function is everywhere positive — the cat has decohered into a classical mixture. **Right top:** Wigner negativity volume $\delta(\kappa/g)$ tracing the quantitative loss of non-classicality; the horizontal grey line marks $\delta = 0.05$, our operational threshold for observability. **Right bottom:** Field-state purity $\mathrm{Tr}[\rho_\text{field}^2]$, which drops from ~0.96 (near-pure cat state) to ~0.38 (highly mixed), confirming that decoherence (fringe erasure) proceeds much faster than energy dissipation (photon loss).
+The cat state at $t = t_r/2$ is progressively destroyed as cavity decay $\kappa/g$ increases from 0 to 0.12, with $\bar{n} = 10$ held fixed. **Left:** Wigner function $W(x,p)$ of the reduced cavity field. At $\kappa = 0$, the full interference pattern is visible between the two coherent lobes — deep negative fringes certifying a macroscopic quantum superposition. As $\kappa$ increases, the fringes wash out first (they are encoded in high-order off-diagonal elements $\langle n|\rho|n + 2k\rangle$ with $k \gg 1$), while the two classical lobes persist longer. By $\kappa/g \approx 0.04$ the negativity volume has dropped below our observability threshold $\delta = 0.05$ (and to $\approx 0.002$ by $\kappa/g = 0.1$) — the cat has decohered into an essentially classical mixture. **Right top:** Wigner negativity volume $\delta(\kappa/g)$ tracing the quantitative loss of non-classicality; the horizontal grey line marks $\delta = 0.05$, our operational threshold for observability. **Right bottom:** Field-state purity $\mathrm{Tr}[\rho_\text{field}^2]$, which drops from ~0.96 (near-pure cat state) to ~0.38 (highly mixed), confirming that decoherence (fringe erasure) proceeds much faster than energy dissipation (photon loss).
 
 ### Photon Blockade Transition
 
@@ -166,7 +167,7 @@ The cat state at $t = t_r/2$ is progressively destroyed as cavity decay $\kappa/
   <img src="animations/anim_g2_blockade.gif" width="800">
 </p>
 
-The transition from weak to strong coupling as $g/\kappa$ is swept from 0.1 to 12. **Left:** Energy-level diagram of the first three JC manifolds ($n = 0, 1, 2$) in units of $\hbar g$, with linewidth bands (shaded) that visibly shrink as $\kappa/g$ decreases. A red arrow marks the coherent drive; the red ✗ marks the blocked second-photon transition once the anharmonic splitting exceeds the linewidth. **Right:** Cavity transmission spectrum $\langle n \rangle(\Delta)$ computed from the steady-state Lindblad equation at each $g/\kappa$. At weak coupling ($g \ll \kappa$), the spectrum is a single Lorentzian centered at $\Delta = 0$ — the atom is too weakly coupled to modify the cavity response. As $g$ crosses $\kappa$, the peak broadens and flattens. At $g/\kappa \gtrsim 2$, the spectrum splits into two resolved peaks at $\Delta = \pm g$ — the **vacuum Rabi doublet**, the spectroscopic signature of strong coupling. The splitting grows as $2g$ (red annotation), directly mirroring the dressed-state gap in the energy ladder. Numerical readouts track the on-resonance $g^{(2)}(0)$ (dropping from ~1 to deep antibunching) and $\langle n \rangle_\text{res}$ (suppressed by the blockade).
+The transition from weak to strong coupling as $g/\kappa$ is swept from 0.1 to 12. **Left:** Energy-level diagram of the first three JC manifolds ($n = 0, 1, 2$) in units of $\hbar g$, with linewidth bands (shaded) that visibly shrink as $\kappa/g$ decreases. A red arrow marks the coherent drive; the red ✗ marks the blocked second-photon transition once the anharmonic splitting exceeds the linewidth. **Right:** Cavity transmission spectrum $\langle n \rangle(\Delta)$ computed from the steady-state Lindblad equation at each $g/\kappa$. At weak coupling ($g \ll \kappa$), the spectrum is a single Lorentzian centered at $\Delta = 0$ — the atom is too weakly coupled to modify the cavity response. As $g$ crosses $\kappa$, the peak broadens and flattens. At $g/\kappa \gtrsim 2$, the spectrum splits into two resolved peaks at $\Delta = \pm g$ — the **vacuum Rabi doublet**, the spectroscopic signature of strong coupling. The splitting grows as $2g$ (red annotation), directly mirroring the dressed-state gap in the energy ladder. Numerical readouts track $g^{(2)}(0)$ with the drive resonant with the lower polariton ($\Delta = \omega_c - \omega_L = g$), dropping from ~1 to deep antibunching (0.03 at $g/\kappa = 10$), and $\langle n \rangle$ at that detuning. Driving on *bare-cavity* resonance ($\Delta = 0$) in strong coupling gives the opposite: the laser is detuned from both polaritons, $\langle n\rangle \sim 10^{-8}$ and $g^{(2)}(0) \gg 1$ (bunching), so that is not the blockade signature.
 
 ---
 
@@ -186,7 +187,7 @@ The transition from weak to strong coupling as $g/\kappa$ is swept from 0.1 to 1
   <img src="figures/fig_photon_number_evolution.png" width="800">
 </p>
 
-Snapshots of the intracavity photon number distribution $P(n,t)$ at six characteristic times during JC evolution ($\bar{n} = 10$, $\Delta = 0$). **(a)** $t = 0$: initial Poissonian distribution. **(b)** $t = 0.5\,t_c$: early Rabi oscillations, still approximately unimodal. **(c)** $t = 2\,t_c$: collapse onset, broadening as different Fock components oscillate at incommensurate $\sqrt{n+1}$ frequencies. **(d)** $t = t_r/2$ (cat state): bimodal structure with peaks separated by $\sim 2\sqrt{\bar{n}} \approx 6$ photons. **(e)** $t = 0.75\,t_r$: partial recombination. **(f)** $t = t_r$ (first revival): partially recovered unimodal shape, broader than the initial Poissonian.
+Snapshots of the intracavity photon number distribution $P(n,t)$ at six characteristic times during JC evolution ($\bar{n} = 10$, $\Delta = 0$). **(a)** $t = 0$: initial Poissonian distribution. **(b)** $t = 0.5\,t_c$: early Rabi oscillations, still approximately unimodal. **(c)** $t = 2\,t_c$: collapse onset, broadening as different Fock components oscillate at incommensurate $\sqrt{n+1}$ frequencies. **(d)** $t = t_r/2$ (cat state): odd-$n$ parity comb (the two cat branches have equal $|\beta|$, so the signature is interference between them, not a bimodal split). **(e)** $t = 0.75\,t_r$: partial recombination. **(f)** $t = t_r$ (first revival): partially recovered unimodal shape, broader than the initial Poissonian.
 
 ### Bloch Sphere Dynamics of the Reduced Atomic State
 
@@ -194,7 +195,7 @@ Snapshots of the intracavity photon number distribution $P(n,t)$ at six characte
   <img src="figures/fig_bloch_sphere_trajectory.png" width="800">
 </p>
 
-**Left:** 3D trajectory of the reduced atomic Bloch vector $\mathbf{r} = (\mathrm{Tr}[\rho_\text{atom}\sigma_x],\, \mathrm{Tr}[\rho_\text{atom}\sigma_y],\, \mathrm{Tr}[\rho_\text{atom}\sigma_z])$ during one full collapse-revival cycle. The atom starts at the excited state (red dot, $|\mathbf{r}| = 1$), spirals inward to the origin at $t = t_r/2$ (gold star, maximally mixed / maximally entangled), and partially re-emerges at $t = t_r$ (green triangle). **Center:** Bloch vector length $|\mathbf{r}|(t)$. **Right:** Von Neumann entropy $S(\rho_\text{atom})$. Vertical dashed lines mark $t_c$ (blue), $t_r/2$ (pink), and $t_r$ (purple).
+**Left:** 3D trajectory of the reduced atomic Bloch vector $\mathbf{r} = (\mathrm{Tr}[\rho_\text{atom}\sigma_x],\, \mathrm{Tr}[\rho_\text{atom}\sigma_y],\, \mathrm{Tr}[\rho_\text{atom}\sigma_z])$ during one full collapse-revival cycle. The atom starts at the excited state (red dot, $|\mathbf{r}| = 1$), spirals inward during the collapse, returns to $|\mathbf{r}| = 0.96$ near the surface at $t = t_r/2$ (gold star: atom nearly pure, disentangled from the field cat), and plunges back inside around $t = t_r$ (green triangle: re-entangled). **Center:** Bloch vector length $|\mathbf{r}|(t)$. **Right:** Von Neumann entropy $S(\rho_\text{atom})$. Vertical dashed lines mark $t_c$ (blue), $t_r/2$ (pink), and $t_r$ (purple).
 
 ### Wigner vs Husimi Q-Function Comparison
 
@@ -202,7 +203,7 @@ Snapshots of the intracavity photon number distribution $P(n,t)$ at six characte
   <img src="figures/fig_q_vs_wigner.png" width="800">
 </p>
 
-Side-by-side snapshots at seven characteristic times. Each Wigner panel is annotated with the negativity volume $\delta$. At $t = t_r/2$, the Wigner function exhibits oscillatory fringes with $\delta = 0.85$, while the Q-function shows only two smooth, positive peaks. At $t = t_r$, residual negativity ($\delta = 0.31$) reflects imperfect refactorization.
+Side-by-side snapshots at six characteristic times. Each Wigner panel is annotated with the negativity volume $\delta$. At $t = t_r/2$, the Wigner function exhibits oscillatory fringes with $\delta = 0.85$, while the Q-function shows only two smooth, positive peaks. At $t = t_r$, residual negativity ($\delta = 0.31$) reflects imperfect refactorization.
 
 ### Cat-State Survival Phase Diagram
 
@@ -210,7 +211,7 @@ Side-by-side snapshots at seven characteristic times. Each Wigner panel is annot
   <img src="figures/fig_phase_combined.png" width="900">
 </p>
 
-Systematic 2D parameter sweep (16 × 16 = 256 independent Lindblad simulations) mapping cat-state survival in the $(\bar{n},\, \kappa/g)$ plane at $t = t_r/2$. **(a)** Wigner negativity volume $\delta(\bar{n}, \kappa/g)$. The cyan contour marks $\delta = 0.05$ — the practical boundary below which cat-state interference fringes are unobservable. At $\kappa = 0$, negativity grows with $\bar{n}$ (more photons → sharper fringes → more negative Wigner values). Any nonzero $\kappa$ destroys the cat state, with the critical decay rate scaling as $\kappa_\text{crit} \sim g / \bar{n}$ — the decoherence rate is $\kappa\bar{n}$, not $\kappa$. **(b)** Fidelity $F = \langle\text{cat}^+|\rho_\text{field}|\text{cat}^+\rangle$ against the ideal even cat state $|\text{cat}^+\rangle = \mathcal{N}(|\alpha\rangle + |-\alpha\rangle)$. High fidelity is concentrated at small $\bar{n}$ and small $\kappa/g$, confirming that the JC interaction produces near-ideal cat states only in the few-photon regime where the rotating-wave approximation is excellent.
+Systematic 2D parameter sweep (16 × 16 = 256 independent Lindblad simulations) mapping cat-state survival in the $(\bar{n},\, \kappa/g)$ plane at $t = t_r/2$. **(a)** Wigner negativity volume $\delta(\bar{n}, \kappa/g)$. The cyan contour marks $\delta = 0.05$ — the practical boundary below which cat-state interference fringes are unobservable. At $\kappa = 0$, negativity grows with $\bar{n}$ and saturates near $\delta \approx 0.88$ for $\bar{n} \gtrsim 14$. Any nonzero $\kappa$ degrades the cat: the $\delta = 0.05$ boundary follows $\kappa_c/g \approx 0.46\,\bar{n}^{-1.14}$ (fit over $\bar{n} = 4$–$25$), between the naive $1/\bar{n}$ and the $\bar{n}^{-3/2}$ estimate of Sec. 3 below. **(b)** Cat fidelity $F_\text{cat} = \max_{\beta,\theta}\langle\text{cat}|\rho_\text{field}|\text{cat}\rangle$ with $|\text{cat}\rangle \propto |\beta\rangle + e^{i\theta}|-\beta\rangle$ and $\beta$ near $i\sqrt{\bar{n}}$. The JC cat lives on the $p$ axis and is approximately *odd*, so comparing with the even cat $|\alpha\rangle + |-\alpha\rangle$ on the real axis would give $F \approx 0$ for every $\bar{n} \gtrsim 3$. Without dissipation $F_\text{cat} \approx 0.78$ for every $\bar{n}$ from 2 to 25: the JC interaction produces a cat of essentially fixed quality, and the $F = 0.5$ contour (cyan) tracks the $\delta = 0.05$ contour.
 
 ### Cat-State Survival: Parameter Slices
 
@@ -218,7 +219,7 @@ Systematic 2D parameter sweep (16 × 16 = 256 independent Lindblad simulations) 
   <img src="figures/fig_phase_slices.png" width="900">
 </p>
 
-1D slices through the phase diagram. **Left:** $\delta$ vs $\bar{n}$ at fixed $\kappa/g$. Without dissipation ($\kappa = 0$, blue), negativity grows monotonically with $\bar{n}$ and saturates near $\delta \approx 0.9$ for $\bar{n} \gtrsim 15$. Even modest decay ($\kappa/g = 0.03$, orange) limits the useful range to $\bar{n} \lesssim 5$. The horizontal grey line marks $\delta = 0.05$. **Right:** $\delta$ vs $\kappa/g$ at fixed $\bar{n}$. The decay is approximately exponential, with the $1/e$ decay point scaling as $\kappa_{1/e} \propto g / \bar{n}$ — directly confirming the enhanced decoherence rate of macroscopic superpositions.
+1D slices through the phase diagram. **Left:** $\delta$ vs $\bar{n}$ at fixed $\kappa/g$. Without dissipation ($\kappa = 0$, blue), negativity grows with $\bar{n}$ and saturates near $\delta \approx 0.88$ for $\bar{n} \gtrsim 14$. Modest decay ($\kappa/g = 0.03$, orange) limits the range with $\delta > 0.05$ to $\bar{n} \lesssim 10$. The horizontal grey line marks $\delta = 0.05$. **Right:** $\delta$ vs $\kappa/g$ at fixed $\bar{n}$. The decay is approximately exponential in $\kappa$, with a decay constant that shrinks roughly as $\bar{n}^{-1.1}$ — the enhanced decoherence rate of macroscopic superpositions.
 
 ### Photon Blockade: $g^{(2)}(0)$ vs Coupling Strength
 
@@ -226,7 +227,7 @@ Systematic 2D parameter sweep (16 × 16 = 256 independent Lindblad simulations) 
   <img src="figures/fig_g2_vs_coupling.png" width="800">
 </p>
 
-Equal-time second-order coherence $g^{(2)}(0)$ of the intracavity field as a function of the vacuum Rabi coupling $g/\kappa$, for several drive amplitudes $\varepsilon/\kappa$. At weak coupling ($g \ll \kappa$), the cavity acts as a passive filter and $g^{(2)}(0) \to 2$ (thermal statistics). As $g$ increases past $g \approx \kappa$ (strong-coupling threshold, red dashed line), the photon blockade mechanism activates: the anharmonic JC ladder prevents simultaneous absorption of two photons, driving $g^{(2)}(0) \to 0$. Weaker drives produce deeper antibunching because the blockade condition requires $\varepsilon \ll g$. **Bottom:** Mean intracavity photon number $\langle n \rangle$ — the blockade is accompanied by a dramatic suppression of transmission.
+Equal-time second-order coherence $g^{(2)}(0)$ of the intracavity field as a function of the vacuum Rabi coupling $g/\kappa$, with the drive resonant with the lower polariton ($\Delta = \omega_c - \omega_L = g$), for several drive amplitudes $\varepsilon/\kappa$. At weak coupling ($g \ll \kappa$) the cavity responds linearly and $g^{(2)}(0) \to 1$ (a coherently driven damped cavity is in a coherent state). As $g$ exceeds $\kappa$ (red dashed line) the anharmonic JC ladder blocks the second photon and $g^{(2)}(0)$ falls steadily (0.11 at $g/\kappa = 5$, 0.03 at $g/\kappa = 10$ for $\varepsilon/\kappa = 0.05$); weaker drives give deeper antibunching. The grey dashed line shows the same sweep with the drive on *bare-cavity* resonance ($\Delta = 0$): the laser is then detuned from both polaritons while the two-photon transition $|0\rangle \to |2,\pm\rangle$ is only $g/\sqrt{2}$ away, so $\langle n\rangle$ collapses to $\sim 10^{-8}$ and $g^{(2)}(0)$ climbs to $\sim 10^7$ — strong *bunching*, not blockade. **Bottom:** mean intracavity photon number $\langle n \rangle$ at $\Delta = g$.
 
 ### Photon Statistics vs Drive Strength
 
@@ -234,7 +235,7 @@ Equal-time second-order coherence $g^{(2)}(0)$ of the intracavity field as a fun
   <img src="figures/fig_g2_vs_drive.png" width="800">
 </p>
 
-$g^{(2)}(0)$ as a function of drive strength $\varepsilon/g$ for several values of $g/\kappa$. At weak drive ($\varepsilon \ll g$), the photon blockade suppresses multi-photon occupation and $g^{(2)}(0) \ll 1$ (antibunched / sub-Poissonian). As the drive increases and overcomes the blockade, $g^{(2)}(0)$ rises through 1 (Poissonian) and can exceed 1 (bunched / super-Poissonian) before settling back toward the classical limit. Stronger coupling ($g/\kappa = 10$, green) maintains antibunching to higher drive powers.
+$g^{(2)}(0)$ as a function of drive strength $\varepsilon/\kappa$ for several values of $g/\kappa$, drive on the polariton ($\Delta = g$). At weak drive the blockade sets $g^{(2)}(0) \approx 0.5$, 0.10 and 0.03 for $g/\kappa = 2$, 5 and 10. As $\varepsilon/\kappa$ grows past $\sim 0.3$ the drive overwhelms the anharmonicity and $g^{(2)}(0)$ rises monotonically toward the coherent-state value 1. Stronger coupling ($g/\kappa = 10$, green) maintains antibunching to higher drive powers.
 
 ### Photon Blockade Spectrum
 
@@ -242,7 +243,7 @@ $g^{(2)}(0)$ as a function of drive strength $\varepsilon/g$ for several values 
   <img src="figures/fig_g2_blockade_spectrum.png" width="800">
 </p>
 
-**Top:** $g^{(2)}(0)$ as a function of laser-cavity detuning $\Delta/g$ for $g/\kappa = 5$. At the dressed-state resonances $\Delta = \pm g$ (red dashed lines), the drive is resonant with the $|0\rangle \to |1,\pm\rangle$ transitions, producing peaks in $\langle n \rangle$ but also sharp structure in $g^{(2)}(0)$. Between the two polariton peaks, the photon blockade produces a deep antibunching dip ($g^{(2)}(0) \ll 1$). The 2-photon resonance condition $\Delta \approx \pm g(\sqrt{2} - 1)$ (orange dashed lines) marks where two-photon absorption becomes possible, creating localized bunching features. **Bottom:** Vacuum Rabi doublet in the cavity transmission spectrum $\langle n \rangle(\Delta)$ — the splitting of $2g$ is the spectroscopic signature of strong coupling.
+**Top:** $g^{(2)}(0)$ as a function of laser-cavity detuning $\Delta/g$ for $g/\kappa = 5$, $\varepsilon/\kappa = 0.05$ (log scale). The antibunching dips ($g^{(2)}(0) \approx 0.1$) occur *at* the polariton resonances $\Delta = \pm g$ (red dashed lines): the first photon is absorbed resonantly, the second is blocked by the anharmonic ladder. Between them, the two-photon resonances at $\Delta = \pm g/\sqrt{2}$ (orange dashed lines), where $2\omega_L$ matches $E_{2,\pm}$, produce strong bunching ($g^{(2)}(0) \sim 10^2$), and on bare resonance $\Delta = 0$ the drive is far from every single-photon transition, $\langle n\rangle$ is tiny and $g^{(2)}(0)$ reaches $\sim 10^7$. **Bottom:** vacuum Rabi doublet in the cavity transmission spectrum $\langle n \rangle(\Delta)$ — the splitting of $2g$ is the spectroscopic signature of strong coupling.
 
 ### $g^{(2)}$ Combined Summary
 
@@ -250,7 +251,7 @@ $g^{(2)}(0)$ as a function of drive strength $\varepsilon/g$ for several values 
   <img src="figures/fig_g2_combined.png" width="900">
 </p>
 
-Four-panel summary of photon blockade physics: **(a)** blockade transition vs $g/\kappa$, **(b)** quantum-to-classical crossover vs drive strength, **(c)** blockade spectrum, **(d)** vacuum Rabi splitting in transmission.
+Four-panel summary of photon blockade physics (drive on the polariton, $\Delta = g$, unless stated): **(a)** blockade transition vs $g/\kappa$, with the bare-resonance ($\Delta = 0$) bunching curve for contrast, **(b)** quantum-to-classical crossover vs drive strength, **(c)** blockade spectrum, **(d)** vacuum Rabi splitting in transmission.
 
 ### Cat-State Detail
 
@@ -258,7 +259,7 @@ Four-panel summary of photon blockade physics: **(a)** blockade transition vs $g
   <img src="paper/figures/fig_cat_state_detail.png" width="750">
 </p>
 
-Cross-section $W(x, p{=}0)$ through the Wigner function at the cat-state time $t = t_r/2$. Deep negative fringes reach $W \sim -0.22$, with fringe spacing $\sim \pi / \sqrt{2\bar{n}} \approx 0.7$.
+Cross-section $W(x, p{=}0)$ through the Wigner function at the cat-state time $t = t_r/2$ ($\delta = 0.85$, purity 0.96, $F_\text{cat} = 0.78$). Deep negative fringes reach $W \approx -0.25$, with fringe spacing $\pi / \sqrt{2\bar{n}} \approx 0.70$.
 
 ### Entanglement Across Field States
 
@@ -266,7 +267,7 @@ Cross-section $W(x, p{=}0)$ through the Wigner function at the cat-state time $t
   <img src="paper/figures/fig_entanglement_comparison.png" width="800">
 </p>
 
-Von Neumann entanglement entropy $S(\rho_\text{atom})$ for four initial field states with $\bar{n} = 10$. **Coherent** (blue): clean collapse to ~1 bit followed by a revival dip at $t_r$. **Fock** (orange): periodic oscillations at $2g\sqrt{n+1}$. **Thermal** (green): permanent saturation — no revival. **Squeezed** (red): intermediate. Only the coherent state supports rephasing for revivals.
+Reduced-atom entropy $S(\rho_\text{atom})$ (solid) and logarithmic negativity $E_\mathcal{N}$ (dashed) for four initial fields with $\bar{n} = 10$. **Coherent** (blue): collapse to ~1 bit, then a minimum $S \approx 0.14$ bit at $t_r/2$ (atom–field disentanglement; the field is the cat), then re-entanglement toward $t_r$. **Thermal** (red): $S$ saturates at 1 bit but $E_\mathcal{N} \approx 0.2$ — the global state is mixed and most of $S$ is classical correlation. **Squeezed vacuum** (green): partial dips only. **Fock $|10\rangle$** (panel b): strictly periodic, inversion period $\pi/(g\sqrt{11})$ and entropy period $\pi/(2g\sqrt{11})$. Thermal and squeezed states use $N_\text{cav} = 150$ ($N_\text{cav} = 50$ would truncate 1–3% of their weight and lower $\langle n\rangle$ to 9.6 and 9.2).
 
 ### Entropy Scaling with Photon Number
 
@@ -274,7 +275,7 @@ Von Neumann entanglement entropy $S(\rho_\text{atom})$ for four initial field st
   <img src="paper/figures/fig_entropy_nbar_scaling.png" width="800">
 </p>
 
-The collapse time $t_c \sim 1/g$ is independent of $\bar{n}$, while $t_r = 2\pi\sqrt{\bar{n}}/g$ scales as $\sqrt{\bar{n}}$. Clean collapse-revival structure emerges for $\bar{n} \geq 9$.
+The collapse time $t_c \sim 1/g$ is independent of $\bar{n}$, while the half-revival time $\pi\sqrt{\bar{n}}/g$ (dotted) and $t_r = 2\pi\sqrt{\bar{n}}/g$ (dashed) scale as $\sqrt{\bar{n}}$. The entropy minimum at $t_r/2$ (disentanglement) deepens with $\bar{n}$ and is cleanly resolved for $\bar{n} \gtrsim 9$.
 
 ### Dissipative Entanglement
 
@@ -282,16 +283,18 @@ The collapse time $t_c \sim 1/g$ is independent of $\bar{n}$, while $t_r = 2\pi\
   <img src="paper/figures/fig_dissipative_entanglement.png" width="800">
 </p>
 
-Effect of cavity dissipation on atom-field entanglement. By $\kappa/g = 0.05$ the revival is absent entirely.
+Inversion, reduced entropy and logarithmic negativity $E_\mathcal{N}$ under cavity loss. For $\kappa > 0$ the global state is mixed, so $S$ no longer measures entanglement: for $\kappa/g \geq 0.05$ it saturates near 1 bit at late times while $E_\mathcal{N}$ decays to zero. The inversion revival is gone by $\kappa/g = 0.05$, whereas $E_\mathcal{N}(t_r/2) \approx 0.35$ is almost unchanged up to $\kappa/g = 0.1$.
 
 ### Decoherence Table
 
 | $\kappa/g$ | Wigner negativity $\delta$ | Field purity | Cat state visible? |
 |-----------|--------------------------|--------------|-------------------|
-| 0.00      | 0.425                    | 0.960        | Yes               |
-| 0.02      | 0.071                    | 0.460        | Marginal          |
-| 0.05      | 0.011                    | 0.418        | No                |
-| 0.10      | < 0.001                  | 0.386        | No                |
+| 0.00      | 0.851                    | 0.960        | Yes               |
+| 0.02      | 0.143                    | 0.460        | Marginal          |
+| 0.05      | 0.022                    | 0.418        | No                |
+| 0.10      | 0.002                    | 0.386        | No                |
+
+$\delta = \int|W|\,dx\,dp - 1$; values converged to three digits between $N_\text{cav} = 35$ and 50.
 
 ### Coherent vs Thermal Inversion
 
@@ -299,7 +302,7 @@ Effect of cavity dissipation on atom-field entanglement. By $\kappa/g = 0.05$ th
   <img src="paper/figures/jaynes_cummings_comparison.png" width="800">
 </p>
 
-Atomic inversion $\langle\sigma_z\rangle(t) = \sum_n P(n)\cos(2g\sqrt{n{+}1}\,t)$ for coherent (Poisson) and thermal (Bose-Einstein) initial fields at $\bar{n} = 10$.
+Atomic inversion $\langle\sigma_z\rangle(t) = \sum_n P(n)\cos(2g\sqrt{n{+}1}\,t)$ for coherent (Poisson) and thermal (Bose-Einstein) initial fields at $\bar{n} = 4, 9, 14, 19, 24$; time in units of $1/g$.
 
 ### Mollow Triplet
 
@@ -331,51 +334,51 @@ $$Q(\alpha) = \frac{1}{\pi}\langle\alpha|\rho|\alpha\rangle$$
 
 Since $\rho$ is a positive operator and $|\alpha\rangle$ is a normalized state, it follows immediately that $Q(\alpha) \geq 0$ for all $\alpha$. This is in sharp contrast to the Wigner function, which can take negative values.
 
-The precise relationship between $Q$ and $W$ is given by the **Gaussian convolution theorem**: writing $\alpha = x_\alpha + ip_\alpha$ in phase-space coordinates,
+The precise relationship between $Q$ and $W$ is given by the **Gaussian convolution theorem**. In the phase-space convention used throughout this repository, $a = (x + ip)/\sqrt{2}$, a coherent state $|\alpha\rangle$ is centred at $(x, p) = \sqrt{2}(\mathrm{Re}\,\alpha, \mathrm{Im}\,\alpha)$ and the vacuum Wigner function is $W_{|0\rangle}(x,p) = \frac{1}{\pi}e^{-(x^2 + p^2)}$ (variance $1/2$ per quadrature). Then
 
-$$Q(x_\alpha, p_\alpha) = \frac{2}{\pi}\int\!\!\int W(x', p')\,\exp\!\left[-2\left((x' - x_\alpha)^2 + (p' - p_\alpha)^2\right)\right]dx'\,dp'$$
+$$Q(x, p) = \frac{1}{\pi}\int\!\!\int W(x', p')\,\exp\!\left[-\left((x' - x)^2 + (p' - p)^2\right)\right]dx'\,dp' = (W * W_{|0\rangle})(x,p),$$
 
-The convolution kernel is a Gaussian of variance $\sigma^2 = 1/4$ in each quadrature — precisely the vacuum-state Wigner function $W_{|0\rangle}(x,p) = \frac{1}{\pi}e^{-(x^2 + p^2)}$. In other words, $Q$ is obtained by **smoothing $W$ with a minimum-uncertainty Gaussian** of width equal to the vacuum fluctuation.
+normalized so that $\int Q\,dx\,dp = 1$. In other words, $Q$ is obtained by **smoothing $W$ with the vacuum Wigner function**, a minimum-uncertainty Gaussian of width equal to the vacuum fluctuation.
 
-This smoothing has an irreversible information-theoretic consequence. Any phase-space feature of $W$ with a spatial frequency above $k_\text{max} \sim 1/\sigma = 2$ is exponentially attenuated. For a Schrödinger cat state with coherent-component separation $2|\alpha|$, the interference fringes in the Wigner function have spatial frequency $k_\text{fringe} = 2|\alpha|$. The ratio $k_\text{fringe}/k_\text{max} = |\alpha|$ determines the suppression factor: the fringes are damped by $\exp(-|\alpha|^2/2)$ in the Q-function. For $\bar{n} = |\alpha|^2 = 10$, this is a suppression of $e^{-5} \approx 0.007$, explaining why the Q-function shows two smooth blobs while the Wigner function resolves detailed oscillatory structure (as demonstrated in our Wigner vs Q comparison figures).
+This smoothing has an irreversible information-theoretic consequence: a feature of $W$ with wavenumber $k$ is attenuated by the Fourier transform of the kernel, $e^{-k^2/4}$. For a cat state with components at $\pm\beta$ (separation $2\sqrt{2}|\beta|$ in these units) the interference term of $W$ oscillates with wavenumber $k = 2\sqrt{2}|\beta|$ (fringe spacing $\pi/(\sqrt{2}|\beta|)$; for $\bar{n} = |\beta|^2 = 10$ this is $0.70$, as observed). Convolving $e^{-p^2}\cos(kp)$ with the kernel gives an oscillation of *half* the wavenumber with amplitude reduced by $e^{-k^2/8} = e^{-|\beta|^2} = e^{-\bar{n}}$. For $\bar{n} = 10$ the residual fringes in $Q$ are suppressed by $e^{-10} \approx 5\times10^{-5}$, which is why the Q-function shows two smooth blobs while the Wigner function resolves the oscillatory structure (as demonstrated in our Wigner vs Q comparison figures). The same factor follows directly from $Q(\beta') \propto |\langle\beta'|\text{cat}\rangle|^2$: the cross term at the midpoint $\beta' = 0$ is $e^{-|\beta|^2}$ relative to the lobe maxima.
 
-This can also be understood information-theoretically through the **Wehrl entropy** $h_W = -\int Q(\alpha)\ln Q(\alpha)\,d^2\alpha$, which satisfies the Lieb bound $h_W \geq 1$, with equality only for coherent states. The Wehrl entropy is always larger than the von Neumann entropy, $h_W \geq S(\rho) + 1$, with the gap quantifying the information lost by the Gaussian smoothing.
+This can also be understood information-theoretically through the **Wehrl entropy** $h_W = -\int Q(\alpha)\ln Q(\alpha)\,d^2\alpha$, which satisfies the Lieb bound $h_W \geq 1$ (with equality only for coherent states) and is never smaller than the von Neumann entropy, $h_W \geq S(\rho)$; the gap quantifies the information lost by the Gaussian smoothing.
 
 The practical implication is that **Wigner negativity, not Q-function structure, is the correct witness of quantum coherence in phase space.** The Q-function is useful for visualization but fundamentally cannot distinguish a quantum cat state $|\alpha\rangle + |-\alpha\rangle$ from a classical mixture $|\alpha\rangle\langle\alpha| + |-\alpha\rangle\langle-\alpha|$.
 
 ### 2. Schrödinger Cat-State Wigner Function and Fidelity
 
-At time $t = t_r/2$, the JC interaction produces a cavity field state that closely approximates an even cat state. The ideal even cat state and its normalization are
+At time $t = t_r/2$, the JC interaction produces a cavity field state that closely approximates a two-component cat state whose branches sit at $\beta = \pm i\sqrt{\bar{n}}$ (on the $p$ axis, rotated by $\pm\pi/2$ from the initial amplitude $\alpha = \sqrt{\bar{n}}$) with a relative phase $\theta \approx 1.2\pi$ for $\bar{n} = 10$ — closer to an *odd* than to an even cat (photon-number parity $\langle(-1)^{\hat n}\rangle = -0.64$). For the algebra below we take the even cat along the real axis as the reference example; the JC cat is obtained by rotating $x \leftrightarrow p$ and changing the relative phase. The ideal even cat state and its normalization are
 
 $$|\text{cat}^+\rangle = \mathcal{N}_+\bigl(|\alpha\rangle + |-\alpha\rangle\bigr), \qquad \mathcal{N}_+ = \frac{1}{\sqrt{2(1 + e^{-2|\alpha|^2})}}$$
 
-The Wigner function of this state decomposes exactly into three terms:
+The Wigner function of this state decomposes exactly into three terms (convention $a = (x+ip)/\sqrt{2}$):
 
-$$W_\text{cat}(x,p) = \frac{\mathcal{N}_+^2}{2}\Bigl[W_\alpha(x,p) + W_{-\alpha}(x,p)\Bigr] + \mathcal{N}_+^2\,W_\text{int}(x,p)$$
+$$W_\text{cat}(x,p) = \mathcal{N}_+^2\Bigl[W_\alpha(x,p) + W_{-\alpha}(x,p)\Bigr] + 2\mathcal{N}_+^2\,W_\text{int}(x,p)$$
 
-where $W_\alpha$ and $W_{-\alpha}$ are the Gaussian Wigner functions of the two coherent components, and the **interference term** is
+where $W_{\pm\alpha}$ are the Gaussian Wigner functions of the two coherent components, centred at $x = \pm\sqrt{2}\alpha$, and the **interference term** is
 
-$$W_\text{int}(x,p) = \frac{1}{\pi}\cos\!\bigl(4\,p\,\mathrm{Re}\,\alpha\bigr)\,e^{-(x^2 + p^2)}$$
+$$W_\text{int}(x,p) = \frac{1}{\pi}\cos\!\bigl(2\sqrt{2}\,\alpha\,p\bigr)\,e^{-(x^2 + p^2)}$$
 
-for $\alpha$ real. This interference term is responsible for the oscillatory fringes between the two lobes and is the sole source of Wigner negativity. The fringe spacing in the $p$-direction is
+for $\alpha$ real ($\int W_\text{int}\,dx\,dp = e^{-2\alpha^2}$, which fixes the normalization). This interference term is responsible for the oscillatory fringes between the two lobes and is the sole source of Wigner negativity. The fringe spacing along the axis perpendicular to the branch separation is
 
-$$\Delta p_\text{fringe} = \frac{\pi}{2\,\mathrm{Re}\,\alpha} = \frac{\pi}{2\sqrt{\bar{n}}}$$
+$$\Delta_\text{fringe} = \frac{\pi}{\sqrt{2}\,\alpha} = \frac{\pi}{\sqrt{2\bar{n}}}$$
 
-which for $\bar{n} = 10$ gives $\Delta p \approx 0.50$. In the $x$-direction (along the cross-section $W(x, p{=}0)$), the fringes are determined by the overlap of the two Gaussian tails, with spacing $\Delta x \approx \pi/\sqrt{2\bar{n}} \approx 0.70$, consistent with our simulation result.
+which for $\bar{n} = 10$ gives $0.70$, consistent with the simulated cross-section $W(x, p{=}0)$ (there the branches lie on the $p$ axis, so the fringes run along $x$).
 
-The maximum negative value of $W_\text{int}$ at the origin is $W_\text{int}(0,0) = -1/\pi$ when $4\cdot 0 \cdot \mathrm{Re}\,\alpha$ produces $\cos = -1$ (which occurs at $p = \pi/(4\mathrm{Re}\,\alpha)$). In practice, the Gaussian envelope $e^{-p^2}$ modulates this, giving the observed minimum $W \approx -0.22$ at $\bar{n} = 10$.
+The most negative value of the ideal cat is reached at the first dark fringe next to the origin, $2\sqrt{2}\alpha p = \pi$, where $W_\text{cat} \approx -\tfrac{2}{\pi}e^{-\pi^2/(8\alpha^2)} \approx -0.28$ for $\bar{n} = 10$. The simulated JC cat, which has fidelity 0.78 with the best two-component cat, reaches $W \approx -0.25$.
 
 A key result is that **larger cat states have finer fringes.** Since $\Delta p \propto 1/\sqrt{\bar{n}}$, the fringe frequency grows with $\bar{n}$, making the interference pattern increasingly vulnerable to any smoothing process — whether instrumental (finite detector resolution) or physical (decoherence). This is the phase-space manifestation of the fragility of macroscopic superpositions.
 
-We quantify the quality of the dynamically generated cat state using the **fidelity** against the ideal even cat:
+We quantify the quality of the dynamically generated cat state using the **fidelity** with the best-fitting two-component cat,
 
-$$F(\bar{n}, \kappa/g) = \langle\text{cat}^+|\,\rho_\text{field}(t_r/2)\,|\text{cat}^+\rangle$$
+$$F_\text{cat}(\bar{n}, \kappa/g) = \max_{\beta,\,\theta}\;\langle\text{cat}(\beta,\theta)|\,\rho_\text{field}(t_r/2)\,|\text{cat}(\beta,\theta)\rangle, \qquad |\text{cat}(\beta,\theta)\rangle \propto |\beta\rangle + e^{i\theta}|-\beta\rangle,$$
 
-Our phase diagram shows that $F > 0.5$ is achievable only for $\bar{n} \lesssim 4$ at $\kappa = 0$. The fidelity is low even without dissipation at large $\bar{n}$ because the JC interaction does not produce a perfect cat state — the anharmonic $\sqrt{n+1}$ spectrum introduces phase errors that grow with the width of the photon-number distribution.
+with $\beta$ scanned in a neighbourhood of $i\sqrt{\bar{n}}$ and $\theta \in [0, 2\pi)$. Comparing instead with the even cat $|\alpha\rangle + |-\alpha\rangle$ on the real axis gives $F \approx 0$ for every $\bar{n} \gtrsim 3$, simply because the JC branches sit on the $p$ axis with a non-even relative phase — a comparison with the wrong reference state, not a property of the dynamics. With the correct reference, our phase diagram shows $F_\text{cat} \approx 0.78$ at $\kappa = 0$ for every $\bar{n}$ from 2 to 25: the anharmonic $\sqrt{n+1}$ spectrum limits the cat quality to a fixed value rather than degrading it with $\bar{n}$. Dissipation lowers $F_\text{cat}$ (0.54 and 0.46 at $\kappa/g = 0.01$ and 0.02 for $\bar{n} = 10$), and the $F_\text{cat} = 0.5$ boundary scales as $\bar{n}^{-1.25}$, tracking the $\delta = 0.05$ boundary.
 
 ### 3. Microscopic Derivation of Enhanced Decoherence
 
-The paper cites the decoherence rate $\Gamma_\text{dec} \sim \kappa\bar{n}$ following Zurek [22]. Here we derive it explicitly from the Lindblad dynamics.
+The paper quotes the fringe decoherence rate $\Gamma_\text{dec} = 2\kappa\bar{n}$ following Zurek [22]. Here we derive it explicitly from the Lindblad dynamics.
 
 Consider the master equation $\dot{\rho} = \kappa\mathcal{D}[a]\rho$ acting on the cavity field alone (ignoring the atom for this argument). We wish to compute the decay rate of the off-diagonal coherence $\langle\alpha|\rho|-\alpha\rangle$ between two coherent states separated by $2\alpha$ in phase space.
 
@@ -403,7 +406,7 @@ For the cat state to be observable, we need $t_\text{dec} \gtrsim t_r/2$, i.e., 
 
 $$\frac{1}{2\kappa\bar{n}} \gtrsim \frac{\pi\sqrt{\bar{n}}}{g} \qquad \Longrightarrow \qquad \frac{\kappa}{g} \lesssim \frac{1}{2\pi\bar{n}^{3/2}}$$
 
-For $\bar{n} = 10$, this gives $\kappa/g \lesssim 0.005$, consistent with the $\delta = 0.05$ contour in our phase diagram lying near $\kappa/g \approx 0.01$ at $\bar{n} = 10$. The approximate $\kappa_\text{crit} \propto \bar{n}^{-3/2}$ scaling (combining the $\bar{n}$-dependent decoherence rate with the $\bar{n}^{1/2}$-dependent formation time) is steeper than the naive $\propto 1/\bar{n}$ estimate, reflecting the double penalty of requiring both a longer formation time and surviving faster decoherence.
+For $\bar{n} = 10$ this crude criterion gives $\kappa/g \lesssim 0.005$, whereas the simulated $\delta = 0.05$ contour lies at $\kappa/g \approx 0.034$: the estimate is conservative because the branch separation, and with it the decoherence rate, builds up gradually during the collapse rather than being $2\sqrt{\bar{n}}$ from $t = 0$. The measured boundary scales as $\kappa_c/g \approx 0.46\,\bar{n}^{-1.14}$ (fit over $\bar{n} = 4$–$25$; $\bar{n}^{-1.26}$ for $\bar{n} \geq 8$, and $\bar{n}^{-1.25}$ for the $F_\text{cat} = 0.5$ boundary), i.e. between the naive $1/\bar{n}$ and the $\bar{n}^{-3/2}$ of this argument, which combines the $\bar{n}$-dependent decoherence rate with the $\bar{n}^{1/2}$-dependent formation time.
 
 ### 4. Second-Order Coherence and the Photon Blockade Effect
 
@@ -437,7 +440,7 @@ The photon blockade arises from the **anharmonicity of the JC energy ladder**. O
 
 $$\omega_{0 \to 1,\pm} = \omega_c \pm g \qquad \text{(first photon)}$$
 
-$$\omega_{1,\pm \to 2,\pm} = \omega_c \pm g(\sqrt{2} - 1) \quad \text{or} \quad \omega_c \pm g(2 - \sqrt{2}) \qquad \text{(second photon)}$$
+$$\omega_{1,\pm \to 2,\pm} = \omega_c \pm g(\sqrt{2} - 1) \quad \text{(same branch)}, \qquad \omega_{1,\mp \to 2,\pm} = \omega_c \pm g(\sqrt{2} + 1) \quad \text{(cross branch)} \qquad \text{(second photon)}$$
 
 The energy cost of the first photon differs from the second by
 
@@ -449,18 +452,18 @@ The blockade condition is:
 
 $$\frac{g(2 - \sqrt{2})}{\kappa} \gg 1 \qquad \Longleftrightarrow \qquad \frac{g}{\kappa} \gg \frac{1}{2 - \sqrt{2}} \approx 1.71$$
 
-In practice, our simulations show that $g^{(2)}(0) < 0.1$ requires $g/\kappa \gtrsim 5$ at weak drive ($\varepsilon/\kappa = 0.05$), accounting for the finite linewidth and multi-level structure.
+In practice, our simulations (drive on the polariton, $\varepsilon/\kappa = 0.05$) give $g^{(2)}(0) = 0.11$ at $g/\kappa = 5$ and $0.03$ at $g/\kappa = 10$, the finite linewidth and multi-level structure softening the ideal step. The laser must sit on a polariton for this to work: on bare-cavity resonance ($\omega_L = \omega_c$) it is detuned by $g$ from both single-photon transitions but only by $g/\sqrt{2}$ from the two-photon transition $|0\rangle \to |2,\pm\rangle$, so the cavity is nearly empty ($\langle n\rangle \sim 10^{-8}$ at $g/\kappa = 5$) and $g^{(2)}(0) \sim 10^7$ — bunching, not blockade.
 
 #### Drive Strength Crossover
 
-At fixed $g/\kappa$, increasing the drive $\varepsilon$ eventually overwhelms the blockade. In the limit $\varepsilon \gg g$, the cavity is driven classically and $g^{(2)}(0) \to 1$. Our simulations show an intermediate regime where $g^{(2)}(0)$ can exceed 1 (bunching) before settling to the coherent-state value — this occurs because the multi-photon dressed states become populated non-thermally when the drive competes with the nonlinearity.
+At fixed $g/\kappa$, increasing the drive $\varepsilon$ eventually overwhelms the blockade. In the limit $\varepsilon \gg g$, the cavity is driven classically and $g^{(2)}(0) \to 1$. In our sweeps ($\Delta = g$, $\varepsilon/\kappa \leq 3$) the rise is monotonic: $g^{(2)}(0)$ approaches 1 from below, more slowly for larger $g/\kappa$.
 
 #### Photon Blockade Spectrum
 
 Sweeping the laser detuning $\Delta$ at fixed $g, \kappa, \varepsilon$ maps out the spectral structure of the blockade. The transmission spectrum $\langle n\rangle(\Delta)$ shows the vacuum Rabi doublet (peaks at $\Delta = \pm g$), while $g^{(2)}(0)(\Delta)$ reveals:
 
-- **Antibunching dips** near $\Delta = 0$, between the two polariton peaks, where the anharmonic detuning $\delta E_\text{block}$ is maximal
-- **Bunching spikes** at specific detunings where multi-photon resonances align, particularly near $\Delta = \pm g(\sqrt{2}-1)$ where the two-photon transition $|0\rangle \to |2,\pm\rangle$ becomes resonant
+- **Antibunching dips** *at* the polariton resonances $\Delta = \pm g$ ($g^{(2)}(0) \approx 0.1$ for $g/\kappa = 5$), where the first photon is absorbed resonantly and the second is blocked
+- **Bunching spikes** at the two-photon resonances $\Delta = \pm g/\sqrt{2}$, where $2\omega_L$ matches $E_{2,\pm} = 2\omega_c \pm \sqrt{2}g$ ($g^{(2)}(0) \sim 10^2$), and a very large bunching peak on bare resonance $\Delta = 0$, where the single-photon transitions are far off resonance and the cavity is almost empty
 
 This spectral structure is the fingerprint of the quantized JC ladder and has been directly observed in circuit QED experiments.
 
@@ -478,29 +481,25 @@ and to the von Neumann entropy by the binary entropy function:
 
 $$S(\rho_\text{atom}) = h\!\left(\frac{1 + |\mathbf{r}|}{2}\right), \qquad h(p) = -p\log_2 p - (1{-}p)\log_2(1{-}p)$$
 
-This provides a geometric interpretation of entanglement dynamics: **the atom's entanglement with the field is encoded in how far the Bloch vector has retreated from the surface toward the center.** At the collapse time, $|\mathbf{r}|$ drops rapidly from 1 to near 0 as the atom becomes maximally entangled with the field. At the cat-state time $t = t_r/2$, the Bloch vector is at the origin — the atom is in a maximally mixed state, and the field is in a cat state. These are two descriptions of the same physical event: maximal bipartite entanglement.
+This provides a geometric interpretation of entanglement dynamics: **the atom's entanglement with the field is encoded in how far the Bloch vector has retreated from the surface toward the center** (for a globally pure state). During the collapse $|\mathbf{r}|$ drops rapidly from 1 to $\approx 0.2$ as the atom becomes strongly entangled with the field. At the cat-state time $t = t_r/2$ the Bloch vector has returned to $|\mathbf{r}| = 0.96$, close to the surface: the atom is nearly pure again because it has **disentangled** from the field, which is left in a nearly pure cat state (Gea-Banacloche, PRL **65**, 3385 (1990)). The cat state and the entanglement minimum are two descriptions of the same event.
 
-The trajectory itself is not a simple radial contraction. In 3D, the Bloch vector traces a **spiral** because the coherent Rabi dynamics (rotation about an axis in the $xz$-plane) compete with the dephasing caused by the spread of Fock-state Rabi frequencies. The spiral structure is visible in our Bloch sphere animations: at early times the atom precesses rapidly (Rabi oscillations), while the envelope of the spiral contracts (collapse). The spiral partially re-expands at the revival, but does not return to the surface due to residual entanglement.
+The trajectory itself is not a simple radial contraction. In 3D, the Bloch vector traces a **spiral** because the coherent Rabi dynamics (rotation about an axis in the $xz$-plane) compete with the dephasing caused by the spread of Fock-state Rabi frequencies. The spiral structure is visible in our Bloch sphere animations: at early times the atom precesses rapidly (Rabi oscillations), while the envelope of the spiral contracts (collapse). The spiral re-expands toward the surface at $t_r/2$, then contracts again around the revival $t_r$ ($|\mathbf{r}| \approx 0.5$, oscillating at the Rabi frequency) as the branches rephase and re-entangle.
 
 ### 6. Photon Number Distribution Dynamics and the Number-Space Cat Signature
 
-The photon number distribution $P(n,t) = \langle n|\rho_\text{field}(t)|n\rangle$ provides complementary information to the Wigner function. For the initial state $|e\rangle \otimes |\alpha\rangle$ evolving under the resonant JC Hamiltonian, the reduced field state at time $t$ has diagonal elements
+The photon number distribution $P(n,t) = \langle n|\rho_\text{field}(t)|n\rangle$ provides complementary information to the Wigner function. For the initial state $|e\rangle \otimes |\alpha\rangle$ evolving under the resonant JC Hamiltonian, each component $|e,n\rangle$ evolves into $\cos(g\sqrt{n+1}\,t)|e,n\rangle - i\sin(g\sqrt{n+1}\,t)|g,n{+}1\rangle$, so the reduced field has the exact diagonal elements
 
-$$P(n,t) = \sum_{m=0}^{\infty} p(m)\left|\langle n|\bigl[\cos(g\sqrt{m{+}1}\,t)|m\rangle\langle m| + \ldots\bigr]|\alpha\rangle\right|^2$$
+$$P(n,t) = p(n)\cos^2\!\bigl(g\sqrt{n+1}\,t\bigr) + p(n-1)\sin^2\!\bigl(g\sqrt{n}\,t\bigr), \qquad p(n) = e^{-\bar{n}}\frac{\bar{n}^n}{n!}.$$
 
-At $t = 0$, $P(n,0) = e^{-\bar{n}}\bar{n}^n/n!$ (Poisson). At $t = t_r/2$, the conditional dynamics split the distribution into two peaks. This can be understood as follows: at the cat-state time, the field is approximately $|\alpha_+\rangle + |\alpha_-\rangle$ with $\alpha_\pm$ separated by $\sim 2\sqrt{\bar{n}}$ in amplitude. The photon-number distribution of such a superposition is
+At $t = 0$ this is the Poisson distribution. At $t = t_r/2 = \pi\sqrt{\bar{n}}/g$ the phases $g\sqrt{n+1}\,t \approx \pi\bar{n} + \tfrac{\pi}{2}(n + 1 - \bar{n})$ alternate by $\pi/2$ from one $n$ to the next, so $\cos^2$ and $\sin^2$ switch between 0 and 1 with the *parity* of $n$: $P(n,t_r/2)$ becomes a comb in which (for $\bar{n} = 10$) odd photon numbers carry 82% of the weight and $\langle(-1)^{\hat n}\rangle = -0.64$. This is the number-space signature of the cat state: the two branches at $\pm i\sqrt{\bar{n}}$ have the *same* $|\beta|$, so their Poisson envelopes coincide and no bimodal split appears; what survives is their interference, an (approximately odd) parity comb. Such a comb provides an experimentally accessible signature of cat-state parity that does not require full Wigner tomography.
 
-$$P_\text{cat}(n) \approx \frac{1}{2}\left[P_{\alpha_+}(n) + P_{\alpha_-}(n)\right] + \text{interference}$$
-
-The two Poisson distributions centered at $|\alpha_+|^2$ and $|\alpha_-|^2$ produce the **bimodal structure** visible in our simulations, with peak separation $\sim 2\sqrt{\bar{n}} \approx 6$ photons at $\bar{n} = 10$. The interference terms produce an even-odd oscillation: for an ideal even cat state, only even Fock numbers are populated ($P(n) = 0$ for odd $n$). In the JC-generated cat state, this even-odd asymmetry is approximate but measurable — it provides an experimentally accessible signature of cat-state parity that does not require full Wigner tomography.
-
-At the revival time $t_r$, the distribution partially recombines toward a unimodal shape, but the anharmonicity of the JC spectrum ($\sqrt{n+1}$ rather than linear) prevents perfect recurrence. The distribution at $t = t_r$ is broader and more irregular than the initial Poissonian, with a variance that exceeds $\bar{n}$ — the field has acquired super-Poissonian statistics through its interaction with the atom.
+At the revival time $t_r$ the phases alternate by $\pi$ instead, the comb disappears and a single hump returns, but the anharmonicity of the JC spectrum ($\sqrt{n+1}$ rather than linear) prevents perfect recurrence. The distribution at $t = t_r$ is broader and more irregular than the initial Poissonian, with a variance that exceeds $\bar{n}$ — the field has acquired super-Poissonian statistics through its interaction with the atom.
 
 ### 7. Cat-State Survival Phase Diagram: Interpretation
 
 The 2D parameter sweep over $(\bar{n}, \kappa/g)$ is the central new computational result. The phase diagram encodes two competing effects:
 
-**Negativity grows with $\bar{n}$ at $\kappa = 0$.** In the ideal (lossless) case, larger $\bar{n}$ produces cat states with sharper interference fringes and larger $\delta$. The negativity saturates near $\delta \approx 0.9$ for $\bar{n} \gtrsim 15$, approaching the ideal even-cat-state value.
+**Negativity grows with $\bar{n}$ at $\kappa = 0$.** In the ideal (lossless) case, larger $\bar{n}$ produces cat states with sharper interference fringes and larger $\delta$. The negativity saturates near $\delta \approx 0.88$ for $\bar{n} \gtrsim 14$, while the cat fidelity stays at $F_\text{cat} \approx 0.78$ for all $\bar{n} \geq 2$.
 
 **Decoherence accelerates with $\bar{n}$ at $\kappa > 0$.** From Sec. 3, the decoherence rate $\Gamma_\text{dec} = 2\kappa\bar{n}$ grows linearly with $\bar{n}$, while the formation time $t_r/2 = \pi\sqrt{\bar{n}}/g$ grows as $\sqrt{\bar{n}}$. The product $\Gamma_\text{dec} \cdot t_r/2 = 2\pi\kappa\bar{n}^{3/2}/g$ grows as $\bar{n}^{3/2}$, meaning that larger cat states are **exponentially harder to observe** at any fixed nonzero $\kappa$.
 
@@ -508,9 +507,9 @@ The **critical decay rate** for cat-state survival scales as
 
 $$\frac{\kappa_\text{crit}}{g} \sim \frac{C}{\bar{n}^{3/2}}$$
 
-where $C$ is a threshold constant that depends on the observability criterion for $\delta$. Our phase diagram confirms this: the $\delta = 0.05$ contour follows an approximate $\kappa \propto \bar{n}^{-3/2}$ power law, steeper than the naive $1/\bar{n}$.
+where $C$ is a threshold constant that depends on the observability criterion for $\delta$. Our phase diagram gives $\kappa_c/g \approx 0.46\,\bar{n}^{-1.14}$ over $\bar{n} = 4$–$25$ ($\bar{n}^{-1.26}$ for $\bar{n} \geq 8$): steeper than the naive $1/\bar{n}$ but shallower than this $\bar{n}^{-3/2}$ estimate, because the branch separation grows gradually during the collapse.
 
-The parameter slices provide practical design guidance. To observe a cat state with $\delta > 0.05$ at $\bar{n} = 10$, one requires $\kappa/g < 0.02$, i.e., $g/\kappa > 50$. This condition is achievable in microwave cavity QED ($g/\kappa \sim 10^4$) and circuit QED ($g/\kappa \sim 100\text{–}300$), but remains challenging in optical cavities where typical $g/\kappa \sim 1\text{–}10$.
+The parameter slices provide practical design guidance. To observe a cat state with $\delta > 0.05$ at $\bar{n} = 10$, one requires $\kappa/g \lesssim 0.034$, i.e., $g/\kappa \gtrsim 30$. This condition is achievable in microwave cavity QED ($g/\kappa \sim 10^4$) and circuit QED ($g/\kappa \sim 100\text{–}300$), but remains challenging in optical cavities where typical $g/\kappa \sim 1\text{–}10$.
 
 ---
 
@@ -522,32 +521,33 @@ The parameter slices provide practical design guidance. To observe a cat state w
 |-----------|--------|---------|
 | Vacuum Rabi coupling | $g$ | 1.0 |
 | Mean photon number | $\bar{n}$ | 10 |
-| Fock truncation | $N_\text{cav}$ | 35–50 |
+| Fock truncation | $N_\text{cav}$ | 35–50 (coherent, Fock); 150 (thermal, squeezed); $3\bar{n}+20$ (sweeps) |
 | Cavity decay | $\kappa/g$ | 0–0.2 |
-| Atom decay | $\gamma/g$ | 0–0.1 |
-| Drive amplitude | $\varepsilon/g$ | 0–5 |
-| Collapse time | $t_c$ | $\sim 1/g$ |
+| Atom decay | $\gamma/\kappa$ | 0.1 (driven-cavity sweeps) |
+| Drive amplitude | $\varepsilon/\kappa$ | 0.01–3 (laser on the polariton, $\Delta = g$) |
+| Collapse time | $t_c$ | $\equiv 1/g$ (operational; Gaussian envelope $e^{-g^2t^2/2}$) |
 | Revival time | $t_r$ | $2\pi\sqrt{\bar{n}}/g$ |
 
 ### Figure-to-Script Map
 
 | Output | Script |
 |--------|--------|
-| `fig_avoided_crossing` | `sim_avoided_crossing.py` |
-| `fig_photon_number_evolution` | `sim_photon_number_distribution.py` |
-| `fig_bloch_sphere_trajectory` | `sim_bloch_sphere.py` |
-| `fig_q_vs_wigner` | `sim_q_vs_wigner.py` |
-| `fig_phase_diagram` / `fig_phase_combined` / `fig_phase_slices` / `fig_cat_fidelity` | `sim_phase_diagram.py` |
-| `fig_g2_vs_coupling` / `fig_g2_vs_drive` / `fig_g2_blockade_spectrum` / `fig_g2_combined` | `sim_g2_coherence.py` |
-| `fig_inversion_snapshots` / `fig_wigner_evolution` / `fig_cat_state_detail` / `fig_wigner_decoherence` | `sim_wigner_evolution.py` |
-| `fig_entanglement_comparison` / `fig_entropy_nbar_scaling` / `fig_dissipative_entanglement` | `sim_entanglement_dynamics.py` |
-| `jaynes_cummings_comparison` | `jaynes_cummings_comparison.py` |
-| `mollow_triplet_driving_strength` | `mollow_triplet.py` |
-| `wigner_fock_combined` | `wigner_fock_states.py` |
-| All `anim_*.gif` | Corresponding `anim_*.py` in `animations/` |
-| `anim_phase_diagram.gif` | `anim_phase_diagram.py` |
-| `anim_g2_blockade.gif` | `anim_g2_blockade.py` |
-| `banner_qsol.png` | `thumbnail_banner.py` |
+| `figures/fig_avoided_crossing`, `animations/anim_avoided_crossing.gif` | `simulations/animation/sim_avoided_crossing.py` |
+| `figures/fig_photon_number_evolution`, `animations/anim_photon_number.gif` | `simulations/animation/sim_photon_number_distribution.py` |
+| `figures/fig_bloch_sphere_trajectory`, `animations/anim_bloch_sphere.gif` | `simulations/animation/sim_bloch_sphere.py` |
+| `figures/fig_q_vs_wigner`, `animations/anim_q_vs_wigner.gif` | `simulations/animation/sim_q_vs_wigner.py` |
+| `figures/fig_phase_diagram` / `fig_phase_combined` / `fig_phase_slices` / `fig_cat_fidelity`, `phase_diagram_data.npz` | `simulations/sim_phase_diagram.py` |
+| `figures/fig_g2_vs_coupling` / `fig_g2_vs_drive` / `fig_g2_blockade_spectrum` / `fig_g2_combined`, `g2_data.npz` | `simulations/sim_g2_coherence.py` |
+| `paper/figures/fig_inversion_snapshots` / `fig_wigner_evolution` / `fig_cat_state_detail` / `fig_wigner_decoherence` | `simulations/sim_wigner_evolution.py` |
+| `paper/figures/fig_entanglement_comparison` / `fig_coherent_entropy_purity` / `fig_entropy_nbar_scaling` / `fig_dissipative_entanglement` | `simulations/sim_entanglement_dynamics.py` |
+| `paper/figures/jaynes_cummings_*` | `simulations/jaynes_cummings_comparison.py` |
+| `paper/figures/mollow_triplet_driving_strength` | `simulations/mollow_triplet.py` |
+| `paper/figures/wigner_functions_3d` / `wigner_functions_2d` (paper Figs. 10–11) | `simulations/wigner_quantum_states.py` |
+| `paper/figures/wigner_fock_individual` / `wigner_fock_combined` | `simulations/wigner_fock_states.py` |
+| `animations/anim_wigner_evolution.gif`, `anim_entanglement.gif`, `anim_decoherence.gif`, `anim_phase_diagram.gif`, `anim_g2_blockade.gif` | the same-named `anim_*.py` in `simulations/animation/` |
+| `paper/figures/banner_*` | static assets (no generating script) |
+
+All scripts write to repo-relative paths (`figures/`, `animations/`, `paper/figures/`) and can be run from any working directory.
 
 ---
 
@@ -559,51 +559,55 @@ cd QSOL_CQED
 pip install -r requirements.txt
 ```
 
-Static figures:
+Paper figures (written to `paper/figures/`):
 
 ```bash
 cd simulations
-python sim_wigner_evolution.py            # ~2 min
-python sim_entanglement_dynamics.py       # ~5 min
-python sim_avoided_crossing.py            # ~30 sec
-python sim_photon_number_distribution.py  # ~1 min
-python sim_bloch_sphere.py                # ~2 min
-python sim_q_vs_wigner.py                 # ~3 min
-python sim_phase_diagram.py              # ~10 min (256-point sweep)
-python sim_g2_coherence.py               # ~5 min
-python jaynes_cummings_comparison.py      # ~10 sec
-python mollow_triplet.py                  # ~1 min
-python wigner_fock_states.py              # ~5 sec
+python sim_wigner_evolution.py            # ~10 s
+python sim_entanglement_dynamics.py       # ~1 min (thermal/squeezed at N_cav = 150)
+python jaynes_cummings_comparison.py      # ~5 s
+python wigner_quantum_states.py           # ~10 s
+python wigner_fock_states.py              # ~5 s
+python mollow_triplet.py                  # ~5 s
 ```
 
-Animations:
+Repository figures and sweeps (written to `figures/`):
 
 ```bash
-cd animations
-python anim_wigner_evolution.py           # ~5 min
-python anim_entanglement.py              # ~5 min
-python anim_decoherence.py              # ~3 min
-python anim_avoided_crossing.py          # ~2 min
-python anim_photon_number.py             # ~3 min
-python anim_bloch_sphere.py              # ~3 min
-python anim_q_vs_wigner.py              # ~8 min
-python anim_phase_diagram.py            # ~5 min
-python anim_g2_blockade.py              # ~3 min
-python thumbnail_banner.py              # ~30 sec
+cd simulations
+python sim_g2_coherence.py                # ~30 s
+python sim_phase_diagram.py               # ~2 min (256 Lindblad solves + cat-fidelity fits)
 ```
+
+Static figures plus GIFs (written to `figures/` and `animations/`):
+
+```bash
+cd simulations/animation
+python sim_avoided_crossing.py            # ~10 s
+python sim_photon_number_distribution.py  # ~15 s
+python sim_bloch_sphere.py                # ~20 s
+python sim_q_vs_wigner.py                 # ~20 s
+python anim_wigner_evolution.py           # ~1 min
+python anim_entanglement.py               # ~1 min
+python anim_decoherence.py                # ~1 min
+python anim_phase_diagram.py              # ~1 min
+python anim_g2_blockade.py                # ~1 min
+```
+
+Timings are for an Apple-silicon laptop with QuTiP 5.2.3, NumPy 2.4, SciPy 1.15. Frames are rendered to a temporary directory and removed after the GIF is assembled. To rebuild the manuscript: `cd paper && tectonic qsol_cqed.tex` (or `latexmk -pdf` with REVTeX 4.2 installed).
 
 ---
 
 ## Citation
 
 ```bibtex
-@article{nguyen2025quantum,
+@article{nguyen2026quantum,
   author  = {Nguyen, Nguyen Khoi},
   title   = {Quantum States of Light in Cavity {QED}: A Computational Study
              of {Wigner} Function Dynamics and Atom-Field Entanglement
              in the {Jaynes-Cummings} Model},
   journal = {arXiv preprint arXiv:XXXX.XXXXX},
-  year    = {2025},
+  year    = {2026},
 }
 ```
 

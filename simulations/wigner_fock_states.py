@@ -18,6 +18,10 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.special import eval_laguerre
 import matplotlib.gridspec as gridspec
+from pathlib import Path
+
+PAPER_FIG = Path(__file__).resolve().parents[1] / 'paper' / 'figures'
+PAPER_FIG.mkdir(parents=True, exist_ok=True)
 
 
 def wigner_fock(n, x, p):
@@ -96,7 +100,7 @@ def plot_combined(n_values, grid_size=100, x_range=5, p_range=5):
                         linewidth=0, antialiased=True, alpha=0.7)
         ax.set_xlabel('x')
         ax.set_ylabel('p')
-        ax.set_zlabel('W(x,p)')
+        ax.set_zlabel('W(x,p)', labelpad=6)
         ax.set_title(f'n = {n}')
         ax.view_init(elev=30, azim=-45)
         wmax = np.max(np.abs(W))
@@ -114,9 +118,8 @@ if __name__ == "__main__":
     states = [0, 1, 2, 3, 4, 5, 6, 7]
 
     fig1 = plot_individual(states)
-    fig1.savefig("wigner_fock_individual.png", dpi=300, bbox_inches='tight')
+    fig1.savefig(PAPER_FIG / "wigner_fock_individual.png", dpi=300, bbox_inches='tight')
 
     fig2 = plot_combined(states)
-    fig2.savefig("wigner_fock_combined.png", dpi=300, bbox_inches='tight')
-
-    plt.show()
+    fig2.savefig(PAPER_FIG / "wigner_fock_combined.png", dpi=300, bbox_inches='tight')
+    print("Saved: wigner_fock_individual, wigner_fock_combined")

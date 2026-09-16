@@ -18,6 +18,14 @@ from qutip import (
     mesolve, wigner, ptrace, coherent, Qobj
 )
 
+# -- Repo-relative output locations (run from any working directory) --
+from pathlib import Path as _Path
+import tempfile as _tempfile
+_ROOT = _Path(__file__).resolve().parents[2]
+FIG_DIR = _ROOT / 'figures'
+ANIM_DIR = _ROOT / 'animations'
+FIG_DIR.mkdir(exist_ok=True); ANIM_DIR.mkdir(exist_ok=True)
+
 # -- Parameters --
 N_cav = 35
 g = 1.0
@@ -44,7 +52,7 @@ inversion = np.array(result.expect[0])
 
 # -- Generate frames --
 xvec = np.linspace(-7, 7, 180)
-frame_dir = '/home/claude/wigner_frames'
+frame_dir = _tempfile.mkdtemp(prefix='qsol_frames_')
 os.makedirs(frame_dir, exist_ok=True)
 
 # Fixed colorscale across all frames
@@ -115,7 +123,7 @@ durations[0] = 1.0          # pause on initial state
 durations[cat_idx] = 1.5    # pause on cat state
 durations[rev_idx] = 1.0    # pause on revival
 
-imageio.mimsave('/home/claude/anim_wigner_evolution.gif', frames,
+imageio.mimsave(f'{ANIM_DIR}/anim_wigner_evolution.gif', frames,
                 duration=durations, loop=0)
 print("Saved: anim_wigner_evolution.gif")
 

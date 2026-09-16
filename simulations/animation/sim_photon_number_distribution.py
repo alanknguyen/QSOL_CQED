@@ -3,13 +3,15 @@
 Photon number distribution P(n,t) during Jaynes-Cummings dynamics.
 
 At t=0 the distribution is Poissonian (coherent state, n_bar=10).
-During collapse the distribution splits into two peaks — the two
-coherent components of the Schrödinger cat state separating in
-photon-number space.  At revival it reforms into a single peak.
+The two branches of the JC cat state have the SAME amplitude |alpha| and
+opposite phases (+-i alpha at t = t_r/2), so their Poisson envelopes
+coincide; what appears in P(n) is the parity interference between them:
+at t_r/2 odd photon numbers dominate (an approximately odd cat, parity
+<(-1)^n> ~ -0.6 for n_bar = 10).  At the first revival the comb washes
+out and a broadened single-hump distribution returns.
 
-This is the Fock-space complement to the Wigner function evolution
-(Fig. 2 in the paper): the photon number distribution literally
-splits, which is WHY the Wigner function develops two lobes.
+This is the Fock-space complement to the Wigner-function evolution
+(Fig. 2 in the paper).
 
 Author: Nguyen Khoi Nguyen (Alan), Boston University
 """
@@ -24,13 +26,21 @@ from PIL import Image
 import io
 import os
 
+# -- Repo-relative output locations (run from any working directory) --
+from pathlib import Path as _Path
+import tempfile as _tempfile
+_ROOT = _Path(__file__).resolve().parents[2]
+FIG_DIR = _ROOT / 'figures'
+ANIM_DIR = _ROOT / 'animations'
+FIG_DIR.mkdir(exist_ok=True); ANIM_DIR.mkdir(exist_ok=True)
+
 # ── Parameters ──────────────────────────────────────────────────────
 g = 1.0                      # vacuum Rabi coupling (sets units)
 n_bar = 10                    # mean photon number
 alpha = np.sqrt(n_bar)        # coherent state amplitude
 N_cav = 40                    # Fock space truncation
 t_r = 2 * np.pi * np.sqrt(n_bar) / g   # revival time
-t_c = np.pi / g               # collapse time
+t_c = 1.0 / g      # operational collapse time (paper Sec. III); t_c = O(1/g)               # collapse time
 
 N_frames = 100                # animation frames
 t_max = 1.3 * t_r
@@ -110,9 +120,9 @@ for i, (t_snap, label) in enumerate(snapshot_labels):
     ax.tick_params(labelsize=8)
 
 plt.tight_layout(rect=[0, 0, 1, 0.92])
-fig.savefig('/home/claude/figures/fig_photon_number_evolution.png', dpi=200,
+fig.savefig(f'{FIG_DIR}/fig_photon_number_evolution.png', dpi=200,
             bbox_inches='tight')
-fig.savefig('/home/claude/figures/fig_photon_number_evolution.pdf',
+fig.savefig(f'{FIG_DIR}/fig_photon_number_evolution.pdf',
             bbox_inches='tight')
 print("Static figure saved.")
 plt.close()
@@ -151,9 +161,9 @@ for fi, idx in enumerate(frame_indices):
     if t_now < t_c:
         phase = 'Rabi oscillations'
     elif t_now < t_r * 0.35:
-        phase = 'Collapse → splitting'
+        phase = 'Collapse'
     elif abs(t_now - t_r/2) < 1.5:
-        phase = 'Cat state (two peaks)'
+        phase = 'Cat state (odd-$n$ parity comb)'
     elif t_now < t_r * 0.85:
         phase = 'Pre-revival'
     elif abs(t_now - t_r) < 1.5:
@@ -199,7 +209,7 @@ for fi, idx in enumerate(frame_indices):
         print(f"  Frame {fi+1}/{N_frames}")
 
 # Save GIF
-gif_path = '/home/claude/animations/anim_photon_number.gif'
+gif_path = f'{ANIM_DIR}/anim_photon_number.gif'
 # Add pauses at key times
 durations = []
 for fi, idx in enumerate(frame_indices):

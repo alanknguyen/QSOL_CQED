@@ -65,8 +65,18 @@ def initial_state(N_cav, field_type="coherent", n_bar=10.0, atom="excited"):
 
 
 def collapse_time(g=1.0):
-    """t_c ~ 1/g"""
+    """Operational collapse time t_c = 1/g (the dephasing estimate gives O(1/g))."""
     return 1.0 / g
+
+
+def wigner_negativity(W, xvec):
+    """Wigner negativity volume delta = int |W| dx dp - 1 (Kenfack & Zyczkowski 2004).
+
+    Zero for any state with non-negative W; equals twice the integrated
+    negative volume, since int W = 1.
+    """
+    dx = xvec[1] - xvec[0]
+    return float(np.sum(np.abs(W)) * dx**2 - 1.0)
 
 
 def revival_time(n_bar, g=1.0):

@@ -5,7 +5,7 @@ Animation: Cat-state survival as κ/g increases.
 For fixed n̄ = 10, sweeps κ/g from 0 to 0.12, showing:
   - Left: Wigner function W(x,p) at t = t_r/2
   - Right top: δ(κ/g) building up as a curve
-  - Right bottom: Cat fidelity F(κ/g) building up
+  - Right bottom: field purity Tr[ρ²](κ/g) building up
 
 Produces: anim_phase_diagram.gif
 """
@@ -19,9 +19,17 @@ from qutip import (
 import imageio
 import os, shutil
 
-fig_dir = '/home/claude/animations'
+# -- Repo-relative output locations (run from any working directory) --
+from pathlib import Path as _Path
+import tempfile as _tempfile
+_ROOT = _Path(__file__).resolve().parents[2]
+FIG_DIR = _ROOT / 'figures'
+ANIM_DIR = _ROOT / 'animations'
+FIG_DIR.mkdir(exist_ok=True); ANIM_DIR.mkdir(exist_ok=True)
+
+fig_dir = str(ANIM_DIR)
 os.makedirs(fig_dir, exist_ok=True)
-frame_dir = '/home/claude/_frames_phase'
+frame_dir = _tempfile.mkdtemp(prefix='qsol_frames_')
 os.makedirs(frame_dir, exist_ok=True)
 
 # ── Parameters ───────────────────────────────────────────────

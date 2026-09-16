@@ -5,11 +5,14 @@ Bloch sphere animation of the reduced atomic state during JC dynamics.
 The reduced atomic density matrix is 2×2, mapping to a point (r_x, r_y, r_z)
 inside the Bloch sphere with r_i = Tr[ρ_atom σ_i].
 
-During Rabi oscillations the Bloch vector traces circles near the surface
-(nearly pure state).  During collapse it spirals inward to the center
-(maximally mixed, S = 1 bit).  At revival it pops back toward the surface.
+During the collapse the Bloch vector spirals inward toward the center
+(atom strongly entangled with the field).  Near the HALF revival time
+t = t_r/2 it returns close to the surface: the atom and field approximately
+disentangle and the field is left in a nearly pure Schrodinger-cat state
+(Gea-Banacloche, PRL 65, 3385 (1990)).  Around the full revival t_r the
+atom is again strongly mixed.
 
-The distance from the center is |r| = sqrt(1 - 2(1-P)) where P is the
+The distance from the center is |r| = sqrt(2P - 1) where P is the atomic
 purity.  Being INSIDE the sphere is a geometric signature of entanglement
 with the field.
 
@@ -24,13 +27,21 @@ import qutip as qt
 from PIL import Image
 import io
 
+# -- Repo-relative output locations (run from any working directory) --
+from pathlib import Path as _Path
+import tempfile as _tempfile
+_ROOT = _Path(__file__).resolve().parents[2]
+FIG_DIR = _ROOT / 'figures'
+ANIM_DIR = _ROOT / 'animations'
+FIG_DIR.mkdir(exist_ok=True); ANIM_DIR.mkdir(exist_ok=True)
+
 # ── Parameters ──────────────────────────────────────────────────────
 g = 1.0
 n_bar = 10
 alpha = np.sqrt(n_bar)
 N_cav = 40
 t_r = 2 * np.pi * np.sqrt(n_bar) / g
-t_c = np.pi / g
+t_c = 1.0 / g      # operational collapse time (paper Sec. III); t_c = O(1/g)
 t_max = 1.3 * t_r
 N_time = 800
 tlist = np.linspace(0, t_max, N_time)
@@ -92,10 +103,10 @@ ax1.scatter(*[rx[0]], *[ry[0]], *[rz[0]], c='red', s=50, zorder=10,
             label=r'$t=0$ (surface)')
 i_cat = np.argmin(np.abs(tlist - t_r/2))
 ax1.scatter(*[rx[i_cat]], *[ry[i_cat]], *[rz[i_cat]], c='gold', s=50,
-            zorder=10, marker='*', label=r'$t=t_r/2$ (center)')
+            zorder=10, marker='*', label=r'$t=t_r/2$ (near surface: disentangled, field = cat)')
 i_rev = np.argmin(np.abs(tlist - t_r))
 ax1.scatter(*[rx[i_rev]], *[ry[i_rev]], *[rz[i_rev]], c='lime', s=50,
-            zorder=10, marker='^', label=r'$t=t_r$ (surface)')
+            zorder=10, marker='^', label=r'$t=t_r$ (inside: re-entangled)')
 
 ax1.set_xlabel(r'$\langle\sigma_x\rangle$', fontsize=9)
 ax1.set_ylabel(r'$\langle\sigma_y\rangle$', fontsize=9)
@@ -117,8 +128,8 @@ ax2.set_ylabel(r'$|\mathbf{r}|$', fontsize=11)
 ax2.set_title('Bloch Vector Length', fontsize=11, fontweight='bold')
 ax2.set_ylim(0, 1.05)
 ax2.legend(fontsize=8)
-ax2.text(0.5, 0.15, r'$|\mathbf{r}| = 0$: maximally mixed' + '\n'
-         + r'(max entanglement)',
+ax2.text(0.5, 0.15, r'$|\mathbf{r}| \to 1$ at $t_r/2$: atom nearly pure,' + '\n'
+         + r'field $\approx$ cat state (weak entanglement)',
          transform=ax2.transAxes, fontsize=8, ha='center',
          bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.8))
 
@@ -140,9 +151,9 @@ fig.suptitle(
     fontsize=13, fontweight='bold', y=1.02
 )
 plt.tight_layout()
-fig.savefig('/home/claude/figures/fig_bloch_sphere_trajectory.png', dpi=200,
+fig.savefig(f'{FIG_DIR}/fig_bloch_sphere_trajectory.png', dpi=200,
             bbox_inches='tight')
-fig.savefig('/home/claude/figures/fig_bloch_sphere_trajectory.pdf',
+fig.savefig(f'{FIG_DIR}/fig_bloch_sphere_trajectory.pdf',
             bbox_inches='tight')
 print("Static figure saved.")
 plt.close()
@@ -218,7 +229,7 @@ for fi, idx in enumerate(frame_indices):
     ax2.set_xlim(0, t_max)
     ax2.set_ylim(0, 1.05)
     ax2.set_xlabel(r'$gt$', fontsize=10)
-    ax2.set_ylabel(r'$|\mathbf{r}|$ (purity)', fontsize=10)
+    ax2.set_ylabel(r'$|\mathbf{r}| = \sqrt{2P-1}$', fontsize=10)
     ax2.set_title('Bloch Vector Length', fontsize=11, fontweight='bold')
 
     # Annotation for regime
@@ -276,7 +287,7 @@ for fi, idx in enumerate(frame_indices):
     else:
         durations.append(80)
 
-gif_path = '/home/claude/animations/anim_bloch_sphere.gif'
+gif_path = f'{ANIM_DIR}/anim_bloch_sphere.gif'
 frames[0].save(gif_path, save_all=True, append_images=frames[1:],
                duration=durations, loop=0)
 print(f"Animation saved: {gif_path}")
