@@ -6,7 +6,7 @@ authors:
   - family-names: Nguyen
     given-names: Nguyen Khoi
     affiliation: "Boston University"
-version: 1.0.0
+version: 1.1.0
 date-released: 2026-09-16
 license: MIT
 repository-code: "https://github.com/alanknguyen/QSOL_CQED"

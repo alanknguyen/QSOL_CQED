@@ -106,7 +106,7 @@ Scripts write to repo-relative paths and can be run from any directory. Timings 
   author  = {Nguyen, Nguyen Khoi},
   title   = {QSOL\_CQED: Wigner-function dynamics and atom-field entanglement in the Jaynes-Cummings model},
   year    = {2026},
-  version = {1.0.0},
+  version = {1.1.0},
   url     = {https://github.com/alanknguyen/QSOL_CQED},
   note    = {Zenodo DOI to be added}
 }
