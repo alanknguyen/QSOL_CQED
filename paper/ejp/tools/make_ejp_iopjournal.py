@@ -109,6 +109,7 @@ IOP = {
  'ofek2016':   r"Ofek N {\it et al} 2016 {\it Nature} {\bf 536} 441",
  'meekhof1996': r"Meekhof D M, Monroe C, King B E, Itano W M and Wineland D J 1996 {\it Phys. Rev. Lett.} {\bf 76} 1796",
  'walls2008':  r"Walls D F and Milburn G J 2008 {\it Quantum Optics} 2nd edn (Berlin: Springer)",
+ 'nguyen2026code': r"Nguyen N K 2026 {\it QSOL\_CQED} version 1.1.0 (Zenodo) \url{https://doi.org/10.5281/zenodo.22806076}",
 }
 assert set(bibkeys) == set(IOP)
 bib = '\n'.join(f'\\bibitem{{{k}}} {IOP[k]}' for k in bibkeys)
@@ -166,7 +167,7 @@ doc = f"""% ====================================================================
 % \\funding{{This work received no external funding.}}
 % \\roles{{N K N carried out all the work reported.}}
 
-\\data{{The simulation code that generates every figure in this article, together with the raw sweep data, is openly available at \\url{{https://github.com/alanknguyen/QSOL_CQED}}. All results were obtained with QuTiP 5.2.3.}}
+\\data{{The simulation code that generates every figure in this article, together with the raw sweep data, is openly available at \\url{{https://github.com/alanknguyen/QSOL_CQED}}; the release used for this article (v1.1.0) is archived on Zenodo~\\cite{{nguyen2026code}}. All results were obtained with QuTiP 5.2.3.}}
 
 % \\suppdata{{...}}
 

@@ -62,8 +62,8 @@ Before submission:
   Fock case), and typical run times. EJP values exercises with solutions in supplementary
   material.
 - **Present the code as the pedagogical instrument.** Point to the repository early, give the
-  QuTiP version, and consider archiving a tagged release on Zenodo so the Data availability
-  statement can cite a DOI rather than a moving GitHub URL.
+  QuTiP version, and cite the archived release: v1.1.0 is on Zenodo (doi:10.5281/zenodo.22806076; all versions:
+  doi:10.5281/zenodo.22806075), and the Data availability statement already cites it.
 - **Cut to the story.** Figures 1–8 carry the argument and are the only ones in the EJP
   file. The omitted Figs. 9–12 can go to supplementary material or the repository notebooks
   if a teaching use is written for them. A 6–8 figure paper of about 5000–6000 words is

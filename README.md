@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![QuTiP 5.2](https://img.shields.io/badge/QuTiP-5.2-green.svg)](https://qutip.org/)
-<!-- [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXX) -->
+[![DOI](https://zenodo.org/badge/1176511924.svg)](https://doi.org/10.5281/zenodo.22806075)
 
 Nguyen Khoi Nguyen, Boston University. Advised by Prof. Luca Dal Negro (EC 585 / EC 777).
 
@@ -107,12 +107,13 @@ Scripts write to repo-relative paths and can be run from any directory. Timings 
   title   = {QSOL\_CQED: Wigner-function dynamics and atom-field entanglement in the Jaynes-Cummings model},
   year    = {2026},
   version = {1.1.0},
-  url     = {https://github.com/alanknguyen/QSOL_CQED},
-  note    = {Zenodo DOI to be added}
+  publisher = {Zenodo},
+  doi     = {10.5281/zenodo.22806076},
+  url     = {https://doi.org/10.5281/zenodo.22806076}
 }
 ```
 
-See also `CITATION.cff`.
+The DOI above identifies release v1.1.0, the version behind the manuscript's figures; [10.5281/zenodo.22806075](https://doi.org/10.5281/zenodo.22806075) always resolves to the latest release. See also `CITATION.cff`.
 
 ## License and acknowledgments
 
