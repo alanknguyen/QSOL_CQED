@@ -53,7 +53,7 @@ def main(version, doi, date):
         (r"(  version = \{)[^}]*(\},)", rf"\g<1>{version}\g<2>", 1),
         (r"(  doi     = \{)[^}]*(\},)", rf"\g<1>{doi}\g<2>", 1),
         (r"(  url     = \{)https://doi\.org/10\.5281/zenodo\.\d+(\})", rf"\g<1>{url}\g<2>", 1),
-        (r"The DOI above identifies release v[\d.]+, the version behind the manuscript's figures;",
+        (r"The DOI above identifies release v[\d.]+, the version behind the manuscripts?'s? figures;",
          f"The DOI above identifies release v{version}, the version behind the manuscripts' figures;", 1),
     ])
     reference = [(r"(QSOL\\\\?_CQED\}?,? version )[\d.]+(,? (?:\(Zenodo\)|Zenodo \(\d{4}\),) \\\\?url\{)https://doi\.org/10\.5281/zenodo\.\d+(\})",

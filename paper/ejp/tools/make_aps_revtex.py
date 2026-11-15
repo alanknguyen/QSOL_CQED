@@ -84,7 +84,7 @@ APS_REFS = {
     'johansson2013': r"J.~R.~Johansson, P.~D.~Nation, and F.~Nori, Comput.\ Phys.\ Commun.\ \textbf{184}, 1234 (2013).",
     'lambert2026': r"N.~Lambert \textit{et al.}, Phys.\ Rep.\ \textbf{1153}, 1 (2026).",
     'walls1985': r"D.~F.~Walls and G.~J.~Milburn, Phys.\ Rev.\ A \textbf{31}, 2403 (1985).",
-    'nguyen2026code': r"N.~K.~Nguyen, \textit{QSOL\_CQED}, version 1.1.0, Zenodo (2026), \url{https://doi.org/10.5281/zenodo.22806076}.",
+    'nguyen2026code': r"N.~K.~Nguyen, \textit{QSOL\_CQED}, version 1.2.0, Zenodo (2026), \url{https://doi.org/10.5281/zenodo.24262358}.",
 }
 SUPPLEMENT_REF = (r"See Supplemental Material at [URL will be inserted by publisher] for the derivations, the numerical "
                   r"methods and their measured errors, the limits of the asymptotic picture, other initial field states, "

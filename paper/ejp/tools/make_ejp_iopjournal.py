@@ -128,7 +128,7 @@ IOP = {
  'meekhof1996': r"Meekhof D M, Monroe C, King B E, Itano W M and Wineland D J 1996 {\it Phys. Rev. Lett.} {\bf 76} 1796",
  'knight1982': r"Knight P L and Radmore P M 1982 {\it Phys. Lett.} A {\bf 90} 342",
  'brune1996rabi': r"Brune M, Schmidt-Kaler F, Maali A, Dreyer J, Hagley E, Raimond J M and Haroche S 1996 {\it Phys. Rev. Lett.} {\bf 76} 1800",
- 'nguyen2026code': r"Nguyen N K 2026 {\it QSOL\_CQED} version 1.1.0 (Zenodo) \url{https://doi.org/10.5281/zenodo.22806076}",
+ 'nguyen2026code': r"Nguyen N K 2026 {\it QSOL\_CQED} version 1.2.0 (Zenodo) \url{https://doi.org/10.5281/zenodo.24262358}",
 }
 assert set(bibkeys) == set(IOP)
 bib = '\n'.join(f'\\bibitem{{{k}}} {IOP[k]}' for k in bibkeys)

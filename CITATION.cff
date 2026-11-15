@@ -18,6 +18,9 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.22806076
     description: "Release v1.1.0"
+  - type: doi
+    value: 10.5281/zenodo.24262358
+    description: "Release v1.2.0"
 keywords:
   - Jaynes-Cummings model
   - cavity QED
