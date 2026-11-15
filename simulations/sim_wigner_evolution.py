@@ -3,226 +3,222 @@
 #
 # Nguyen Khoi Nguyen (Alan)
 # Dept. of Physics, Boston University
-# Advised by Prof. Luca Dal Negro,
+# Began as a course project taught by Prof. Luca Dal Negro
 #
-# Generates: fig_inversion_snapshots, fig_wigner_evolution,
-#            fig_cat_state_detail, fig_wigner_decoherence
+# Generates (paper/figures/): fig_inversion_snapshots, fig_wigner_evolution,
+#                             fig_cat_state_detail, fig_wigner_decoherence
 #
 # Initial state: |e> x |alpha>, resonant (Delta = 0).
-# The cavity field evolves from a coherent state into a Schrodinger
-# cat state at t = t_r/2, where the atom and field approximately
-# disentangle (Gea-Banacloche 1990). Wigner negativity
+# The cavity field splits into two counter-rotating components.  At
+# t = t_r/2 they sit on opposite sides of phase space (on the p axis for real
+# alpha), the atom and field approximately disentangle, and the field is left
+# in a Schrodinger cat state (Gea-Banacloche 1990).  Wigner negativity
 #   delta = int |W| dx dp - 1        (Kenfack & Zyczkowski 2004)
 # quantifies non-classicality; delta = 2 * (integrated negative volume).
 
 import numpy as np
 import matplotlib.pyplot as plt
-from pathlib import Path
-from qutip import (
-    basis, tensor, destroy, sigmaz, sigmam, sigmap,
-    mesolve, wigner, ptrace, coherent, Qobj
-)
+from scipy.signal import find_peaks
+from qutip import basis, tensor, destroy, sigmaz, sigmam, qeye, mesolve, wigner, coherent
 
-PAPER_FIG = Path(__file__).resolve().parents[1] / 'paper' / 'figures'
-PAPER_FIG.mkdir(parents=True, exist_ok=True)
+from plotstyle import (use_style, save, panel_label, wigner_image, FULL_W, W_MAX,
+                       COLORS, PAPER_FIG)
+from utils import wigner_negativity, cat_fidelity, photon_parity
 
-
-def wigner_negativity(W, xvec):
-    """delta = int |W(x,p)| dx dp - 1 on a uniform grid (0 for classical states)."""
-    dx = xvec[1] - xvec[0]
-    return float(np.sum(np.abs(W)) * dx**2 - 1.0)
+use_style()
 
 # -- Parameters --
 N_cav = 35
 g = 1.0
-omega_c = 0.0
-omega_a = 0.0       # resonant
-alpha = np.sqrt(10.0)  # <n> = 10
-n_bar = np.abs(alpha)**2
-t_collapse = 1.0 / g      # operational collapse time, t_c = O(1/g)
+n_bar = 10.0
+alpha = np.sqrt(n_bar)
+t_collapse = 1.0 / g                       # operational collapse time, t_c = 1/g
 t_revival = 2 * np.pi * np.sqrt(n_bar) / g
 
-# -- Joint Hilbert space operators --
-a  = tensor(destroy(N_cav), Qobj(np.eye(2)))
-sm = tensor(Qobj(np.eye(N_cav)), sigmam())
-sp = tensor(Qobj(np.eye(N_cav)), sigmap())
-sz = tensor(Qobj(np.eye(N_cav)), sigmaz())
-
-# H_JC = omega_c a^dag a + (omega_a/2) sigma_z + g(a^dag sigma^- + a sigma^+)
-H_JC = omega_c * a.dag() * a + 0.5 * omega_a * sz + g * (a.dag() * sm + a * sp)
+# -- Operators and Hamiltonian (resonant, interaction picture) --
+a = tensor(destroy(N_cav), qeye(2))
+sm = tensor(qeye(N_cav), sigmam())
+sz = tensor(qeye(N_cav), sigmaz())
+H_JC = g * (a.dag() * sm + a * sm.dag())
 
 # -- Initial state: atom excited, field coherent --
 psi0 = tensor(coherent(N_cav, alpha), basis(2, 0))
 
-# -- Time grid --
-# Wigner snapshots at six characteristic times
-t_snapshots = [
-    0.0,
-    0.5 * t_collapse,
-    2.0 * t_collapse,
-    0.5 * t_revival,      # cat state forms here
-    0.75 * t_revival,
-    t_revival,             # first revival
+# -- Six snapshot times; panel letters are shared by Figs. 1 and 2 --
+snapshots = [
+    ('a', 0.0,               r'$t = 0$'),
+    ('b', 0.5 * t_collapse,  r'$t = 0.5\,t_c$'),
+    ('c', 2.0 * t_collapse,  r'$t = 2\,t_c$'),
+    ('d', 0.5 * t_revival,   r'$t = t_r/2$'),
+    ('e', 0.75 * t_revival,  r'$t = 0.75\,t_r$'),
+    ('f', t_revival,         r'$t = t_r$'),
 ]
-snapshot_labels = [
-    r'$t = 0$' + '\n(coherent state)',
-    r'$t = 0.5\,t_c$' + '\n(early Rabi)',
-    r'$t = 2\,t_c$' + '\n(collapse onset)',
-    r'$t = 0.5\,t_r$' + '\n(cat state)',
-    r'$t = 0.75\,t_r$' + '\n(pre-revival)',
-    r'$t = t_r$' + '\n(first revival)',
-]
+t_snap = [s[1] for s in snapshots]
+tlist = np.array(sorted(set(np.linspace(0, 1.5 * t_revival, 3000)) | set(t_snap)))
 
-tlist_dense = np.linspace(0, 1.5 * t_revival, 2000)
-tlist_all = np.array(sorted(set(list(tlist_dense) + t_snapshots)))
-
-# -- Solve --
-print(f"Solving JC: <n>={n_bar:.0f}, g={g}, N_cav={N_cav}")
-print(f"  t_collapse={t_collapse:.3f}, t_revival={t_revival:.3f}")
-
-result = mesolve(H_JC, psi0, tlist_all, [], [sz], options={'store_states': True})
+print(f"Solving JC: <n> = {n_bar:.0f}, g = {g}, N_cav = {N_cav}")
+print(f"  t_collapse = {t_collapse:.3f}, t_revival = {t_revival:.3f}")
+result = mesolve(H_JC, psi0, tlist, e_ops=[sz], options={'store_states': True})
 inversion = np.array(result.expect[0])
+state_at = lambda t: result.states[int(np.argmin(np.abs(tlist - t)))]
+
+# Phase-space grid: 281 x 281 points on [-7, 7]^2, spacing 0.05, i.e. 14 points
+# per interference fringe (fringe period pi / sqrt(2 n_bar) = 0.70).
+xvec = np.linspace(-7, 7, 281)
 
 
-# Fig 1: Atomic inversion <sigma_z>(t) with Wigner snapshot markers
-fig1, ax1 = plt.subplots(figsize=(10, 4))
-ax1.plot(tlist_all * g, inversion, 'b-', linewidth=0.6, alpha=0.9)
-ax1.set_xlabel(r'$gt$', fontsize=14)
-ax1.set_ylabel(r'$\langle \sigma_z \rangle$', fontsize=14)
-ax1.set_title(rf'Atomic Inversion ($\bar{{n}} = {n_bar:.0f}$, $\Delta = 0$)', fontsize=13)
-ax1.set_ylim(-1.1, 1.1)
-ax1.axhline(0, color='gray', linewidth=0.5, linestyle='--')
+# ---------------------------------------------------------------------------
+# Fig 1: atomic inversion with the snapshot times marked
+# ---------------------------------------------------------------------------
+fig1, ax1 = plt.subplots(figsize=(FULL_W, 2.35))
+ax1.plot(tlist * g, inversion, color=COLORS['blue'], lw=0.8)
+ax1.axhline(0, color='0.6', lw=0.4)
 
-for i, ts in enumerate(t_snapshots):
-    idx = np.argmin(np.abs(tlist_all - ts))
-    color = plt.cm.plasma(i / len(t_snapshots))
-    ax1.axvline(ts * g, color=color, linewidth=1.2, linestyle=':', alpha=0.7)
-    ax1.plot(ts * g, inversion[idx], 'o', color=color, markersize=8, zorder=5)
+# Collapse envelope from linearising sqrt(n+1) about n_bar and summing over the
+# Poisson weights: exp[-g^2 t^2 n_bar / 2(n_bar + 1)], which tends to the Gaussian
+# exp(-g^2 t^2 / 2) for large n_bar.  With the factor n_bar/(n_bar+1) it bounds
+# every extremum of the oscillation; without it the curve overshoots it visibly.
+t_env = np.linspace(0, 4.5, 200)
+env = np.exp(-(g * t_env) ** 2 * n_bar / (2 * (n_bar + 1)))
+ax1.plot(t_env, env, color=COLORS['grey'], lw=0.7, ls='--', label='collapse envelope')
+ax1.plot(t_env, -env, color=COLORS['grey'], lw=0.7, ls='--')
 
-ax1.annotate('collapse', xy=(2 * t_collapse * g, 0), fontsize=10,
-             ha='center', va='bottom', color='gray',
-             arrowprops=dict(arrowstyle='->', color='gray'),
-             xytext=(2 * t_collapse * g, 0.5))
-ax1.annotate('revival', xy=(t_revival * g, 0.5), fontsize=10,
-             ha='center', va='bottom', color='gray',
-             arrowprops=dict(arrowstyle='->', color='gray'),
-             xytext=(t_revival * g, 0.9))
+trans = ax1.get_xaxis_transform()
+for k, (letter, ts, _) in enumerate(snapshots):
+    idx = int(np.argmin(np.abs(tlist - ts)))
+    ax1.axvline(ts * g, color='0.45', lw=0.5, ls=':')
+    ax1.plot(ts * g, inversion[idx], 'o', ms=4.5, mfc='white', mec='k', mew=0.8,
+             zorder=5, clip_on=False)
+    # (a), (b), (c) are close together: stagger their labels
+    ax1.text(ts * g, 1.10 if letter == 'b' else 1.02, f'({letter})', transform=trans,
+             ha='center', va='bottom', fontsize=8)
+ax1.text(0.5 * t_revival * g + 0.25, -0.98, r'$t_r/2$', fontsize=8, va='bottom')
+ax1.text(t_revival * g + 0.25, -0.98, r'$t_r$', fontsize=8, va='bottom')
 
+ax1.set_xlabel(r'$gt$')
+ax1.set_ylabel(r'$\langle \sigma_z \rangle$')
 ax1.set_xlim(0, 1.5 * t_revival * g)
-fig1.tight_layout()
-fig1.savefig(PAPER_FIG / 'fig_inversion_snapshots.png', dpi=200, bbox_inches='tight')
-fig1.savefig(PAPER_FIG / 'fig_inversion_snapshots.pdf', bbox_inches='tight')
-print("Saved: fig_inversion_snapshots")
+ax1.set_ylim(-1.08, 1.08)
+ax1.set_yticks([-1, -0.5, 0, 0.5, 1])
+ax1.legend(loc='upper left', bbox_to_anchor=(0.16, 1.0))
+save(fig1, PAPER_FIG / 'fig_inversion_snapshots')
 
 
-# Fig 2: Wigner function W(x,p) of the reduced cavity field
-# at the six snapshot times
-xvec = np.linspace(-7, 7, 200)
+# ---------------------------------------------------------------------------
+# Fig 2: Wigner function of the reduced cavity field at the six snapshot times
+# ---------------------------------------------------------------------------
+fig2, axes = plt.subplots(2, 3, figsize=(FULL_W, 3.95), sharex=True, sharey=True)
+phi = np.linspace(0, 2 * np.pi, 400)
+radius = np.sqrt(2 * n_bar)        # |alpha| = sqrt(n_bar)  <->  x^2 + p^2 = 2 n_bar
 
-fig2, axes = plt.subplots(2, 3, figsize=(14, 9))
-axes_flat = axes.flatten()
-
-print("Computing Wigner functions...")
-for i, ts in enumerate(t_snapshots):
-    idx = np.argmin(np.abs(tlist_all - ts))
-    psi_t = result.states[idx]
-    rho_field = ptrace(psi_t, 0)   # trace out atom, keep field
+print("Wigner functions of the reduced field:")
+for ax, (letter, ts, label) in zip(axes.flat, snapshots):
+    rho_field = state_at(ts).ptrace(0)
     W = wigner(rho_field, xvec, xvec)
-
-    ax = axes_flat[i]
-    wlim = np.max(np.abs(W))
-    im = ax.contourf(xvec, xvec, W, levels=100, cmap='RdBu_r',
-                      vmin=-wlim, vmax=wlim)
-    ax.set_xlabel(r'$x$', fontsize=11)
-    ax.set_ylabel(r'$p$', fontsize=11)
-    ax.set_title(snapshot_labels[i], fontsize=10)
-    ax.set_aspect('equal')
-    fig2.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-
+    im = wigner_image(ax, W, xvec)
+    ax.plot(radius * np.cos(phi), radius * np.sin(phi), color='0.35', lw=0.4, ls=(0, (4, 4)))
     delta = wigner_negativity(W, xvec)
     purity = (rho_field * rho_field).tr().real
-    print(f"  t={ts:.3f}: delta={delta:.4f}, purity={purity:.4f}")
+    panel_label(ax, letter, label)
+    ax.text(0.04, 0.04, rf'$\delta = {max(delta, 0):.2f}$', transform=ax.transAxes,
+            fontsize=8, va='bottom')
+    ax.set_xticks([-5, 0, 5]); ax.set_yticks([-5, 0, 5])
+    print(f"  ({letter}) t = {ts:6.3f}: delta = {delta:.4f}, purity = {purity:.4f}, "
+          f"W in [{W.min():.3f}, {W.max():.3f}]")
+for ax in axes[-1]:
+    ax.set_xlabel(r'$x$')
+for ax in axes[:, 0]:
+    ax.set_ylabel(r'$p$')
+cb = fig2.colorbar(im, ax=axes, shrink=0.85, aspect=30, pad=0.02,
+                   ticks=[-0.3, -0.15, 0, 0.15, 0.3])
+cb.set_label(r'$W(x,p)$')
+save(fig2, PAPER_FIG / 'fig_wigner_evolution')
 
-fig2.suptitle(
-    r'Wigner Function Evolution of Cavity Field'
-    + '\n' + rf'($\bar{{n}}={n_bar:.0f}$, $g={g}$, resonant)',
-    fontsize=13, y=1.02
-)
-fig2.tight_layout()
-fig2.savefig(PAPER_FIG / 'fig_wigner_evolution.png', dpi=200, bbox_inches='tight')
-fig2.savefig(PAPER_FIG / 'fig_wigner_evolution.pdf', bbox_inches='tight')
-print("Saved: fig_wigner_evolution")
 
-
-# Fig 3: Cat state at t = t_r/2, with W(x, p=0) cross-section
-cat_idx = np.argmin(np.abs(tlist_all - 0.5 * t_revival))
-rho_cat = ptrace(result.states[cat_idx], 0)
+# ---------------------------------------------------------------------------
+# Fig 3: the cat state at t = t_r/2 and its cut along p = 0
+# ---------------------------------------------------------------------------
+rho_cat = state_at(0.5 * t_revival).ptrace(0)
 W_cat = wigner(rho_cat, xvec, xvec)
-
-fig3, (ax3a, ax3b) = plt.subplots(1, 2, figsize=(12, 5))
-
-wlim = np.max(np.abs(W_cat))
-im3 = ax3a.contourf(xvec, xvec, W_cat, levels=100, cmap='RdBu_r',
-                      vmin=-wlim, vmax=wlim)
-ax3a.set_xlabel(r'$x$', fontsize=13)
-ax3a.set_ylabel(r'$p$', fontsize=13)
 delta_cat = wigner_negativity(W_cat, xvec)
-ax3a.set_title(rf'Wigner function at $t = t_r/2$ (cat state), $\delta = {delta_cat:.2f}$', fontsize=12)
-ax3a.set_aspect('equal')
-fig3.colorbar(im3, ax=ax3a)
+x_line = np.linspace(-7, 7, 2801)
+W_line = wigner(rho_cat, x_line, np.array([0.0]))[0]       # exactly on p = 0
 
-# Cross-section at p = 0: negative values prove non-classicality
-mid_idx = len(xvec) // 2
-ax3b.plot(xvec, W_cat[mid_idx, :], 'b-', linewidth=1.5, label=r'$W(x, p=0)$')
-ax3b.axhline(0, color='gray', linewidth=0.5, linestyle='--')
-ax3b.fill_between(xvec, W_cat[mid_idx, :], 0,
-                   where=(W_cat[mid_idx, :] < 0),
-                   color='red', alpha=0.3, label='Negative region')
-ax3b.set_xlabel(r'$x$', fontsize=13)
-ax3b.set_ylabel(r'$W(x, 0)$', fontsize=13)
-ax3b.set_title(r'Cross-section at $p = 0$: negative regions witness non-classicality', fontsize=10)
-ax3b.legend(fontsize=11)
+peaks, _ = find_peaks(W_line, height=0.05)
+troughs, _ = find_peaks(-W_line, height=0.05)
+spacing = np.mean(np.diff(x_line[peaks]))
+F_cat, beta_fit, theta_fit = cat_fidelity(rho_cat, n_bar, return_params=True)
+parity = photon_parity(rho_cat)
+print(f"Cat state at t_r/2: delta = {delta_cat:.4f}, purity = {(rho_cat * rho_cat).tr().real:.4f}")
+print(f"  W(x, 0): min = {W_line.min():.4f} at x = {x_line[np.argmin(W_line)]:.3f}, "
+      f"max = {W_line.max():.4f}; mean fringe spacing = {spacing:.3f} "
+      f"(pi/sqrt(2 n_bar) = {np.pi / np.sqrt(2 * n_bar):.3f})")
+print(f"  best-fit cat: F = {F_cat:.3f}, beta = {beta_fit:.3f}, theta = {theta_fit / np.pi:.2f} pi; "
+      f"photon-number parity = {parity:+.3f}")
 
-fig3.tight_layout()
-fig3.savefig(PAPER_FIG / 'fig_cat_state_detail.png', dpi=200, bbox_inches='tight')
-fig3.savefig(PAPER_FIG / 'fig_cat_state_detail.pdf', bbox_inches='tight')
-print("Saved: fig_cat_state_detail")
+fig3, (ax3a, ax3b) = plt.subplots(1, 2, figsize=(FULL_W, 2.75),
+                                  gridspec_kw={'width_ratios': [1, 1.3]})
+im3 = wigner_image(ax3a, W_cat, xvec)
+ax3a.axhline(0, color='k', lw=0.5, ls=(0, (4, 3)))
+ax3a.set_xlim(-6, 6); ax3a.set_ylim(-6, 6)
+ax3a.set_xticks([-4, 0, 4]); ax3a.set_yticks([-4, 0, 4])
+ax3a.set_xlabel(r'$x$'); ax3a.set_ylabel(r'$p$')
+panel_label(ax3a, 'a', rf'$W(x,p)$ at $t_r/2$, $\delta = {delta_cat:.2f}$')
+cb3 = fig3.colorbar(im3, ax=ax3a, shrink=0.9, aspect=25, pad=0.03,
+                    ticks=[-0.3, -0.15, 0, 0.15, 0.3])
+cb3.set_label(r'$W(x,p)$')
+
+ax3b.axhline(0, color='0.6', lw=0.4)
+# negative regions in the blue of the map in (a)
+ax3b.fill_between(x_line, W_line, 0, where=W_line < 0, color=COLORS['blue'], alpha=0.30,
+                  lw=0, label=r'$W < 0$')
+ax3b.plot(x_line, W_line, color=COLORS['blue'], lw=1.0)
+# fringe-spacing marker between the two tallest neighbouring maxima
+k = int(np.argmax(W_line[peaks]))
+k2 = k + 1 if k + 1 < len(peaks) and (k == 0 or W_line[peaks[k + 1]] > W_line[peaks[k - 1]]) else k - 1
+xa, xb = sorted((x_line[peaks[k]], x_line[peaks[k2]]))
+y_arrow = W_line.max() + 0.035
+ax3b.annotate('', xy=(xa, y_arrow), xytext=(xb, y_arrow),
+              arrowprops=dict(arrowstyle='<->', lw=0.6, shrinkA=0, shrinkB=0))
+ax3b.text(xb + 0.15, y_arrow, r'$\pi/\sqrt{2\bar{n}}$', fontsize=8, va='center', ha='left')
+ax3b.set_xlim(-4.5, 5.5)
+ax3b.set_ylim(-0.31, 0.34)
+ax3b.set_xlabel(r'$x$'); ax3b.set_ylabel(r'$W(x,\,p=0)$')
+ax3b.legend(loc='lower right')
+panel_label(ax3b, 'b', r'cut along $p = 0$')
+# give (b) exactly the height of the square map in (a), so frames and titles line up
+fig3.canvas.draw()
+fig3.set_layout_engine('none')
+_pa, _pb = ax3a.get_position(), ax3b.get_position()
+ax3b.set_position([_pb.x0, _pa.y0, _pb.width, _pa.height])
+save(fig3, PAPER_FIG / 'fig_cat_state_detail')
 
 
-# Fig 4: Decoherence of the cat state under cavity loss kappa.
-#         Lindblad: d rho/dt = -i[H,rho] + kappa D[a] rho
-kappa_values = [0.0, 0.02 * g, 0.05 * g, 0.1 * g]
+# ---------------------------------------------------------------------------
+# Fig 4: decoherence of the cat under cavity loss kappa
+#        d rho/dt = -i[H, rho] + kappa D[a] rho
+# ---------------------------------------------------------------------------
+kappa_values = [0.0, 0.02, 0.05, 0.10]
+fig4, axes4 = plt.subplots(1, 4, figsize=(FULL_W, 2.05), sharex=True, sharey=True)
 
-fig4, axes4 = plt.subplots(1, 4, figsize=(16, 4))
-
-print("\nDissipative Wigner functions at t = t_r/2:")
-for j, kap in enumerate(kappa_values):
-    c_ops = [np.sqrt(kap) * a] if kap > 0 else []
-    tlist_short = np.linspace(0, 0.5 * t_revival, 500)
-    res = mesolve(H_JC, psi0, tlist_short, c_ops, [],
-                  options={'store_states': True})
-    rho_f = ptrace(res.states[-1], 0)
+print("Reduced field at t = t_r/2 with cavity loss:")
+for ax, letter, kap in zip(axes4, 'abcd', kappa_values):
+    c_ops = [np.sqrt(kap * g) * a] if kap > 0 else []
+    res = mesolve(H_JC, psi0, [0, 0.5 * t_revival], c_ops=c_ops)
+    rho_f = res.states[-1].ptrace(0)
     W_d = wigner(rho_f, xvec, xvec)
-    wlim_d = max(np.max(np.abs(W_d)), 1e-10)
-
-    im4 = axes4[j].contourf(xvec, xvec, W_d, levels=80, cmap='RdBu_r',
-                              vmin=-wlim_d, vmax=wlim_d)
-    axes4[j].set_title(rf'$\kappa/g = {kap/g:.2f}$', fontsize=11)
-    axes4[j].set_xlabel(r'$x$', fontsize=10)
-    if j == 0:
-        axes4[j].set_ylabel(r'$p$', fontsize=10)
-    axes4[j].set_aspect('equal')
-    fig4.colorbar(im4, ax=axes4[j], fraction=0.046, pad=0.04)
-
+    im4 = wigner_image(ax, W_d, xvec)
     delta_d = wigner_negativity(W_d, xvec)
     purity_d = (rho_f * rho_f).tr().real
-    print(f"  kappa/g={kap/g:.2f}: delta={delta_d:.4f}, purity={purity_d:.4f}")
-
-fig4.suptitle(
-    rf'Decoherence of Cat State at $t = t_r/2$ ($\bar{{n}}={n_bar:.0f}$)',
-    fontsize=13, y=1.04
-)
-fig4.tight_layout()
-fig4.savefig(PAPER_FIG / 'fig_wigner_decoherence.png', dpi=200, bbox_inches='tight')
-fig4.savefig(PAPER_FIG / 'fig_wigner_decoherence.pdf', bbox_inches='tight')
-print("Saved: fig_wigner_decoherence")
+    panel_label(ax, letter, rf"$\kappa/g = {'0' if kap == 0 else f'{kap:.2f}'}$", y=1.17)
+    ax.text(0.0, 1.03, rf'$\delta = {delta_d:.3f}$', transform=ax.transAxes, fontsize=8.5,
+            va='bottom')
+    ax.set_xlim(-6.5, 6.5); ax.set_ylim(-6.5, 6.5)
+    ax.set_xticks([-5, 0, 5]); ax.set_yticks([-5, 0, 5])
+    ax.set_xlabel(r'$x$')
+    print(f"  kappa/g = {kap:.2f}: delta = {delta_d:.4f}, purity = {purity_d:.4f}, "
+          f"W in [{W_d.min():.3f}, {W_d.max():.3f}]")
+axes4[0].set_ylabel(r'$p$')
+cb4 = fig4.colorbar(im4, ax=axes4, shrink=0.95, aspect=18, pad=0.015, ticks=[-0.3, -0.15, 0, 0.15, 0.3])
+cb4.set_label(r'$W(x,p)$')
+save(fig4, PAPER_FIG / 'fig_wigner_decoherence')

@@ -1,132 +1,81 @@
 # anim_wigner_evolution.py
-# Animated Wigner function W(x,p) of the cavity field during JC dynamics.
-# Shows coherent state splitting into a Schrodinger cat state.
+# Animated Wigner function W(x,p) of the cavity field during JC dynamics:
+# the coherent state splits into two counter-rotating components, which form a
+# Schrodinger cat at t_r/2 and meet again at the revival t_r.
 #
 # Nguyen Khoi Nguyen (Alan)
 # Dept. of Electrical and Computer Engineering, Boston University
-# Advised by Prof. Luca Dal Negro, EC 585
+# Began as a course project in EC 585 and EC 777, taught by Prof. Luca Dal Negro
 #
-# Generates: anim_wigner_evolution.gif
+# Generates: animations/anim_wigner_evolution.gif
 
+import sys
+from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-import imageio
-import os
-from qutip import (
-    basis, tensor, destroy, sigmaz, sigmam, sigmap,
-    mesolve, wigner, ptrace, coherent, Qobj
-)
+from qutip import basis, tensor, destroy, sigmaz, sigmam, qeye, mesolve, wigner, coherent
 
-# -- Repo-relative output locations (run from any working directory) --
-from pathlib import Path as _Path
-import tempfile as _tempfile
-_ROOT = _Path(__file__).resolve().parents[2]
-FIG_DIR = _ROOT / 'figures'
-ANIM_DIR = _ROOT / 'animations'
-FIG_DIR.mkdir(exist_ok=True); ANIM_DIR.mkdir(exist_ok=True)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from plotstyle import (use_style, wigner_image, time_guides, fig_to_frame, save_gif,
+                       COLORS, ANIM_DIR)
+from utils import wigner_negativity
 
-# -- Parameters --
+use_style()
+
 N_cav = 35
 g = 1.0
-alpha = np.sqrt(10.0)
-n_bar = np.abs(alpha)**2
+n_bar = 10.0
 t_revival = 2 * np.pi * np.sqrt(n_bar) / g
+t_max = 1.2 * t_revival
 
-# -- Operators --
-a  = tensor(destroy(N_cav), Qobj(np.eye(2)))
-sm = tensor(Qobj(np.eye(N_cav)), sigmam())
-sp = tensor(Qobj(np.eye(N_cav)), sigmap())
-sz = tensor(Qobj(np.eye(N_cav)), sigmaz())
+a = tensor(destroy(N_cav), qeye(2))
+sm = tensor(qeye(N_cav), sigmam())
+sz = tensor(qeye(N_cav), sigmaz())
+H_JC = g * (a.dag() * sm + a * sm.dag())
+psi0 = tensor(coherent(N_cav, np.sqrt(n_bar)), basis(2, 0))
 
-H_JC = g * (a.dag() * sm + a * sp)
-psi0 = tensor(coherent(N_cav, alpha), basis(2, 0))
-
-# -- Solve for full time range --
-n_frames = 120
-tlist = np.linspace(0, 1.2 * t_revival, n_frames)
-
-print(f"Solving JC dynamics: {n_frames} frames, t_max = {tlist[-1]:.1f}")
-result = mesolve(H_JC, psi0, tlist, [], [sz], options={'store_states': True})
+# The inversion is solved on a fine grid (the Rabi period is ~0.95/g); the
+# frames are a subset of it.  Using the frame times alone aliases the curve.
+# 121 frames over 1.2 t_r: the frame spacing is t_r/100, so t_r/2 and t_r are
+# frames 50 and 100 exactly and the numbers shown at the pauses are those of
+# the paper (delta = 0.85 at t_r/2).
+n_frames = 121
+STRIDE = 20
+tlist = np.linspace(0, t_max, (n_frames - 1) * STRIDE + 1)
+print(f"Solving JC dynamics on {len(tlist)} time points, {n_frames} frames")
+result = mesolve(H_JC, psi0, tlist, e_ops=[sz], options={'store_states': True})
 inversion = np.array(result.expect[0])
 
-# -- Generate frames --
-xvec = np.linspace(-7, 7, 180)
-frame_dir = _tempfile.mkdtemp(prefix='qsol_frames_')
-os.makedirs(frame_dir, exist_ok=True)
+xvec = np.linspace(-7, 7, 281)          # 14 points per fringe, as in the figures
+frames, durations = [], []
+for k in range(n_frames):
+    i = k * STRIDE
+    W = wigner(result.states[i].ptrace(0), xvec, xvec)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.6, 3.3), gridspec_kw={'width_ratios': [1.15, 1]})
+    im = wigner_image(ax1, W, xvec)
+    ax1.set_xlabel(r'$x$'); ax1.set_ylabel(r'$p$')
+    ax1.set_xticks([-5, 0, 5]); ax1.set_yticks([-5, 0, 5])
+    fig.colorbar(im, ax=ax1, shrink=0.9, aspect=22, pad=0.03, ticks=[-0.3, -0.15, 0, 0.15, 0.3],
+                 label=r'$W(x,p)$')
+    ax1.set_title(rf'cavity field, $\delta = {max(wigner_negativity(W, xvec), 0):.2f}$', fontsize=9)
 
-# Fixed colorscale across all frames
-global_wlim = 0.30
+    ax2.plot(tlist * g, inversion, color='0.8', lw=0.6)
+    ax2.plot(tlist[:i + 1] * g, inversion[:i + 1], color=COLORS['blue'], lw=0.8)
+    ax2.plot(tlist[i] * g, inversion[i], 'o', color=COLORS['red'], ms=5, mec='k', mew=0.5, zorder=5)
+    ax2.axhline(0, color='0.6', lw=0.4)
+    time_guides(ax2, t_revival * g, labels=True)
+    ax2.set_xlabel(r'$gt$'); ax2.set_ylabel(r'$\langle \sigma_z \rangle$')
+    ax2.set_xlim(0, t_max * g); ax2.set_ylim(-1.1, 1.1)
+    ax2.set_title(rf'atomic inversion, $t/t_r = {tlist[i] / t_revival:.2f}$', fontsize=9, pad=16)
+    frames.append(fig_to_frame(fig, dpi=115))
+    durations.append(80)
+    if (k + 1) % 30 == 0:
+        print(f"  {k + 1}/{n_frames} frames")
 
-print("Rendering frames...")
-for i in range(n_frames):
-    rho_field = ptrace(result.states[i], 0)
-    W = wigner(rho_field, xvec, xvec)
-
-    fig = plt.figure(figsize=(14, 5.5))
-    gs = fig.add_gridspec(1, 2, width_ratios=[1.3, 1], wspace=0.3)
-
-    # Left: Wigner function
-    ax1 = fig.add_subplot(gs[0])
-    im = ax1.contourf(xvec, xvec, W, levels=80, cmap='RdBu_r',
-                       vmin=-global_wlim, vmax=global_wlim,
-                       extend='both')
-    ax1.set_xlabel(r'$x$', fontsize=14)
-    ax1.set_ylabel(r'$p$', fontsize=14)
-    ax1.set_aspect('equal')
-    fig.colorbar(im, ax=ax1, fraction=0.046, pad=0.04, label=r'$W(x,p)$')
-
-    # Wigner negativity
-    dx = xvec[1] - xvec[0]
-    neg_vol = np.sum(np.abs(W)) * dx**2 - 1
-    ax1.set_title(rf'Cavity Field Wigner Function    $\delta = {neg_vol:.3f}$',
-                  fontsize=12)
-
-    # Right: inversion time trace with moving marker
-    ax2 = fig.add_subplot(gs[1])
-    ax2.plot(tlist * g, inversion, 'b-', linewidth=0.8, alpha=0.4)
-    ax2.plot(tlist[:i+1] * g, inversion[:i+1], 'b-', linewidth=1.5)
-    ax2.plot(tlist[i] * g, inversion[i], 'ro', markersize=10, zorder=5)
-    ax2.set_xlabel(r'$gt$', fontsize=14)
-    ax2.set_ylabel(r'$\langle \sigma_z \rangle$', fontsize=14)
-    ax2.set_title('Atomic Inversion', fontsize=12)
-    ax2.set_xlim(0, 1.2 * t_revival * g)
-    ax2.set_ylim(-1.1, 1.1)
-    ax2.axhline(0, color='gray', linewidth=0.5, linestyle='--')
-
-    # Time label
-    t_ratio = tlist[i] / t_revival
-    fig.suptitle(
-        rf'Jaynes-Cummings Dynamics: $\bar{{n}} = {n_bar:.0f}$,  $t/t_r = {t_ratio:.2f}$',
-        fontsize=14, y=0.98
-    )
-
-    fig.savefig(f'{frame_dir}/frame_{i:04d}.png', dpi=100, bbox_inches='tight',
-                facecolor='white')
-    plt.close(fig)
-
-    if (i + 1) % 20 == 0:
-        print(f"  {i+1}/{n_frames} frames done")
-
-# -- Stitch into GIF --
-print("Assembling GIF...")
-frames = []
-for i in range(n_frames):
-    frames.append(imageio.imread(f'{frame_dir}/frame_{i:04d}.png'))
-
-# Pause on key moments: t=0, cat state (t_r/2), revival (t_r)
-cat_idx = np.argmin(np.abs(tlist - 0.5 * t_revival))
-rev_idx = np.argmin(np.abs(tlist - t_revival))
-
-durations = [0.08] * n_frames
-durations[0] = 1.0          # pause on initial state
-durations[cat_idx] = 1.5    # pause on cat state
-durations[rev_idx] = 1.0    # pause on revival
-
-imageio.mimsave(f'{ANIM_DIR}/anim_wigner_evolution.gif', frames,
-                duration=durations, loop=0)
-print("Saved: anim_wigner_evolution.gif")
-
-# Cleanup frames
-import shutil
-shutil.rmtree(frame_dir)
+# pause on the initial state, the cat state (t_r/2) and the revival (t_r)
+frame_t = tlist[::STRIDE]
+durations[0] = 1000
+assert abs(frame_t[50] - 0.5 * t_revival) < 1e-9 and abs(frame_t[100] - t_revival) < 1e-9
+durations[int(np.argmin(np.abs(frame_t - 0.5 * t_revival)))] = 1800
+durations[int(np.argmin(np.abs(frame_t - t_revival)))] = 1200
+save_gif(frames, ANIM_DIR / 'anim_wigner_evolution.gif', durations)

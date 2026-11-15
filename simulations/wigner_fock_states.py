@@ -1,125 +1,87 @@
 # wigner_fock_states.py
-# Wigner functions W(x,p) for Fock states |n>, with marginal distributions.
+# Wigner functions W(x,p) of the Fock states |n>, n = 0 ... 7, from the closed form
+#
+#   W_n(x,p) = (-1)^n / pi * L_n(2(x^2 + p^2)) * exp(-(x^2 + p^2)),
+#
+# with L_n the Laguerre polynomial (convention a = (x + ip)/sqrt(2)).
+# n = 0 (vacuum) is a Gaussian with no negativity; for n >= 1 the rings
+# alternate in sign and W_n(0,0) = (-1)^n / pi.
 #
 # Nguyen Khoi Nguyen (Alan)
 # Dept. of Electrical and Computer Engineering, Boston University
-# Advised by Prof. Luca Dal Negro, EC 585
+# Began as a course project in EC 585, taught by Prof. Luca Dal Negro
 #
-# Generates: wigner_fock_individual.png, wigner_fock_combined.png
-#
-# W_n(x,p) = (-1)^n / pi * L_n(2(x^2 + p^2)) * exp(-(x^2 + p^2))
-# L_n: Laguerre polynomial of order n.
-# n = 0 (vacuum): Gaussian, no negativity.
-# n >= 1: ring structure with negative regions indicating non-classicality.
+# Generates (paper/figures/): wigner_fock_combined.png, wigner_fock_individual.png
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import cm
-from mpl_toolkits.mplot3d import Axes3D
+from scipy.integrate import trapezoid
 from scipy.special import eval_laguerre
-import matplotlib.gridspec as gridspec
-from pathlib import Path
 
-PAPER_FIG = Path(__file__).resolve().parents[1] / 'paper' / 'figures'
-PAPER_FIG.mkdir(parents=True, exist_ok=True)
+from plotstyle import use_style, FULL_W, W_MAX, PAPER_FIG
+
+use_style()
 
 
 def wigner_fock(n, x, p):
-    """W_n(x,p) for Fock state |n>."""
-    r2 = x**2 + p**2
-    return ((-1)**n / np.pi) * eval_laguerre(n, 2 * r2) * np.exp(-r2)
+    """W_n(x,p) for the Fock state |n>."""
+    r2 = x ** 2 + p ** 2
+    return ((-1) ** n / np.pi) * eval_laguerre(n, 2 * r2) * np.exp(-r2)
 
 
-def plot_individual(n_values, grid_size=100, x_range=5, p_range=5):
-    """3D surface plots with marginal distributions on side walls."""
-    num = len(n_values)
-    rows = int(np.ceil(num / 2))
-    fig = plt.figure(figsize=(18, 12))
-    gs = gridspec.GridSpec(rows, 2, figure=fig)
+def surface(ax, X, P, W):
+    # symmetric colour scale: W = 0 is the same (white) in every panel
+    ax.plot_surface(X, P, W, cmap='RdBu_r', vmin=-W_MAX, vmax=W_MAX, linewidth=0,
+                    antialiased=True, rstride=1, cstride=1, rasterized=True)
+    ax.set_zlim(-W_MAX, W_MAX)
+    ax.view_init(elev=28, azim=-55)
 
+
+def plot_combined(n_values, grid_size=121, x_range=4.5):
+    """Compact 2 x 4 grid of surfaces."""
     x = np.linspace(-x_range, x_range, grid_size)
-    p = np.linspace(-p_range, p_range, grid_size)
-
+    X, P = np.meshgrid(x, x)
+    fig = plt.figure(figsize=(FULL_W, 3.5))
     for i, n in enumerate(n_values):
-        # Adaptive range for high n
-        if n > 10:
-            rng = 2 * np.sqrt(n + 1)
-            xl = np.linspace(-rng, rng, grid_size)
-            pl = np.linspace(-rng, rng, grid_size)
-        else:
-            xl, pl = x, p
-        X, P = np.meshgrid(xl, pl)
-        W = wigner_fock(n, X, P)
-
-        row, col = i // 2, i % 2
-        ax = fig.add_subplot(gs[row, col], projection='3d')
-        surf = ax.plot_surface(X, P, W, cmap=cm.coolwarm,
-                               linewidth=0, antialiased=True, alpha=0.8)
-
-        # Marginals: integrate W over one quadrature
-        dx = xl[1] - xl[0]
-        dp = pl[1] - pl[0]
-        x_marginal = np.trapezoid(W, dx=dp, axis=0)  # integrate over p
-        p_marginal = np.trapezoid(W, dx=dx, axis=1)  # integrate over x
-
-        max_z = np.max(np.abs(W))
-        zbase = -1.2 * max_z
-
-        # x marginal on the back wall (p = p_range)
-        ax.plot(xl, np.full_like(xl, pl[-1]), zbase + x_marginal * 0.4 / max(np.max(np.abs(x_marginal)), 1e-10),
-                color='black', linewidth=2)
-
-        # p marginal on the left wall (x = -x_range)
-        ax.plot(np.full_like(pl, xl[0]), pl, zbase + p_marginal * 0.4 / max(np.max(np.abs(p_marginal)), 1e-10),
-                color='black', linewidth=2)
-
-        ax.set_xlabel('x')
-        ax.set_ylabel('p')
-        ax.set_zlabel('W(x,p)')
-        ax.set_title(f'Fock State |{n}>')
-        ax.view_init(elev=30, azim=-45)
-        ax.set_zlim(-max_z * 1.2, max_z * 1.2)
-
-    fig.tight_layout()
-    fig.suptitle('Wigner Functions for Fock States', fontsize=16, y=0.98)
+        ax = fig.add_subplot(2, 4, i + 1, projection='3d')
+        surface(ax, X, P, wigner_fock(n, X, P))
+        ax.set_xticks([-4, 0, 4]); ax.set_yticks([-4, 0, 4]); ax.set_zticks([-0.3, 0, 0.3])
+        ax.tick_params(labelsize=6, pad=-3)
+        ax.set_xlabel(r'$x$', labelpad=-9, fontsize=8); ax.set_ylabel(r'$p$', labelpad=-9, fontsize=8)
+        ax.set_box_aspect((1, 1, 0.75), zoom=0.86)
+        ax.set_title(rf'$|{n}\rangle$', fontsize=9, pad=-6)
     return fig
 
 
-def plot_combined(n_values, grid_size=100, x_range=5, p_range=5):
-    """Compact 2x4 grid of 3D Wigner surfaces."""
-    fig = plt.figure(figsize=(15, 8))
-
+def plot_individual(n_values, grid_size=121, x_range=4.5):
+    """Surfaces with the two marginal distributions drawn on the side walls."""
     x = np.linspace(-x_range, x_range, grid_size)
-    p = np.linspace(-p_range, p_range, grid_size)
-    X, P = np.meshgrid(x, p)
-
+    X, P = np.meshgrid(x, x)
+    rows = int(np.ceil(len(n_values) / 2))
+    fig = plt.figure(figsize=(FULL_W, 2.6 * rows))
     for i, n in enumerate(n_values):
         W = wigner_fock(n, X, P)
-        ax = fig.add_subplot(2, 4, i + 1, projection='3d')
-        ax.plot_surface(X, P, W, cmap=cm.coolwarm,
-                        linewidth=0, antialiased=True, alpha=0.7)
-        ax.set_xlabel('x')
-        ax.set_ylabel('p')
-        ax.set_zlabel('W(x,p)', labelpad=6)
-        ax.set_title(f'n = {n}')
-        ax.view_init(elev=30, azim=-45)
-        wmax = np.max(np.abs(W))
-        ax.set_zlim(-wmax * 1.2, wmax * 1.2)
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
-        ax.set_zticklabels([])
-
-    fig.tight_layout()
-    fig.suptitle('Wigner Functions for Fock States (n = 0 to 7)', fontsize=16, y=0.98)
+        ax = fig.add_subplot(rows, 2, i + 1, projection='3d')
+        surface(ax, X, P, W)
+        # marginals |psi_n(x)|^2 and |psi_n(p)|^2 (equal for a Fock state), rescaled for display
+        marg_x = trapezoid(W, x, axis=0)          # integrate over p
+        marg_p = trapezoid(W, x, axis=1)          # integrate over x
+        scale = 0.9 * W_MAX / marg_x.max()
+        ax.plot(x, np.full_like(x, x[-1]), -W_MAX + scale * marg_x, color='k', lw=0.8)
+        ax.plot(np.full_like(x, x[0]), x, -W_MAX + scale * marg_p, color='k', lw=0.8)
+        ax.set_xlabel(r'$x$', labelpad=-6); ax.set_ylabel(r'$p$', labelpad=-6)
+        ax.set_zticks([-0.3, 0, 0.3])
+        ax.tick_params(labelsize=7, pad=-2)
+        ax.set_title(rf'$|{n}\rangle$', fontsize=9, pad=-4)
     return fig
 
 
 if __name__ == "__main__":
     states = [0, 1, 2, 3, 4, 5, 6, 7]
-
-    fig1 = plot_individual(states)
-    fig1.savefig(PAPER_FIG / "wigner_fock_individual.png", dpi=300, bbox_inches='tight')
-
-    fig2 = plot_combined(states)
-    fig2.savefig(PAPER_FIG / "wigner_fock_combined.png", dpi=300, bbox_inches='tight')
-    print("Saved: wigner_fock_individual, wigner_fock_combined")
+    fig = plot_combined(states)
+    fig.savefig(PAPER_FIG / 'wigner_fock_combined.png', dpi=300)
+    plt.close(fig)
+    fig = plot_individual(states)
+    fig.savefig(PAPER_FIG / 'wigner_fock_individual.png', dpi=250)
+    plt.close(fig)
+    print("Saved: wigner_fock_combined.png, wigner_fock_individual.png")

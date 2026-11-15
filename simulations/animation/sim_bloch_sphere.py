@@ -1,294 +1,150 @@
 #!/usr/bin/env python3
 """
-Bloch sphere animation of the reduced atomic state during JC dynamics.
+Bloch-vector trajectory of the reduced atomic state during JC dynamics.
 
-The reduced atomic density matrix is 2×2, mapping to a point (r_x, r_y, r_z)
-inside the Bloch sphere with r_i = Tr[ρ_atom σ_i].
+The reduced atomic density matrix maps to a point r = (<sigma_x>, <sigma_y>,
+<sigma_z>) inside the Bloch sphere.  For a real coherent amplitude and exact
+resonance <sigma_x> = 0 at all times, so the whole trajectory lies in the
+y-z plane and is drawn there.
 
-During the collapse the Bloch vector spirals inward toward the center
-(atom strongly entangled with the field).  Near the HALF revival time
-t = t_r/2 it returns close to the surface: the atom and field approximately
-disentangle and the field is left in a nearly pure Schrodinger-cat state
-(Gea-Banacloche, PRL 65, 3385 (1990)).  Around the full revival t_r the
-atom is again strongly mixed.
+During the collapse the Bloch vector spirals in toward the centre (atom
+strongly entangled with the field).  Near the HALF revival time t = t_r/2 it
+returns close to the surface, |r| = 0.96, on the sigma_y axis: the atom and
+field approximately disentangle and the field is left in a nearly pure
+Schrodinger-cat state (Gea-Banacloche, PRL 65, 3385 (1990)).  Around the full
+revival t_r the atom is mixed again (|r| ~ 0.5, oscillating).
 
-The distance from the center is |r| = sqrt(2P - 1) where P is the atomic
-purity.  Being INSIDE the sphere is a geometric signature of entanglement
-with the field.
+For a pure atom-field state the atomic purity is (1 + |r|^2)/2 and the
+entanglement entropy is S = h((1 + |r|)/2), so the distance from the surface
+is a direct picture of the entanglement.
+
+Generates: figures/fig_bloch_sphere_trajectory (.png, .pdf), animations/anim_bloch_sphere.gif
 
 Author: Nguyen Khoi Nguyen (Alan), Boston University
 """
 
+import sys
+from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.gridspec as gridspec
+from matplotlib.collections import LineCollection
 import qutip as qt
-from PIL import Image
-import io
 
-# -- Repo-relative output locations (run from any working directory) --
-from pathlib import Path as _Path
-import tempfile as _tempfile
-_ROOT = _Path(__file__).resolve().parents[2]
-FIG_DIR = _ROOT / 'figures'
-ANIM_DIR = _ROOT / 'animations'
-FIG_DIR.mkdir(exist_ok=True); ANIM_DIR.mkdir(exist_ok=True)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from plotstyle import (use_style, save, panel_label, time_guides, fig_to_frame, save_gif,
+                       FULL_W, COLORS, FIG_DIR, ANIM_DIR, PAPER_FIG, SUPP_DIR)
 
-# ── Parameters ──────────────────────────────────────────────────────
+use_style()
+
 g = 1.0
 n_bar = 10
-alpha = np.sqrt(n_bar)
 N_cav = 40
 t_r = 2 * np.pi * np.sqrt(n_bar) / g
-t_c = 1.0 / g      # operational collapse time (paper Sec. III); t_c = O(1/g)
 t_max = 1.3 * t_r
-N_time = 800
-tlist = np.linspace(0, t_max, N_time)
+tlist = np.linspace(0, t_max, 2601)
 
-# ── JC Hamiltonian ──────────────────────────────────────────────────
-a  = qt.tensor(qt.destroy(N_cav), qt.qeye(2))
+a = qt.tensor(qt.destroy(N_cav), qt.qeye(2))
 sm = qt.tensor(qt.qeye(N_cav), qt.sigmam())
-sp = qt.tensor(qt.qeye(N_cav), qt.sigmap())
-sz = qt.tensor(qt.qeye(N_cav), qt.sigmaz())
-sx = qt.tensor(qt.qeye(N_cav), qt.sigmax())
-sy = qt.tensor(qt.qeye(N_cav), qt.sigmay())
+H_JC = g * (a.dag() * sm + a * sm.dag())
+psi0 = qt.tensor(qt.coherent(N_cav, np.sqrt(n_bar)), qt.basis(2, 0))
+paulis = [qt.tensor(qt.qeye(N_cav), s) for s in (qt.sigmax(), qt.sigmay(), qt.sigmaz())]
 
-H_JC = g * (a.dag() * sm + a * sp)
-psi0 = qt.tensor(qt.coherent(N_cav, alpha), qt.basis(2, 0))
+print("Solving JC dynamics ...")
+res = qt.mesolve(H_JC, psi0, tlist, e_ops=paulis)
+rx, ry, rz = (np.real(e) for e in res.expect)
+r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
+p = np.clip((1 + r) / 2, 1e-15, 1 - 1e-15)
+entropy = -p * np.log2(p) - (1 - p) * np.log2(1 - p)      # S = h((1 + |r|)/2), pure global state
+i_half = int(np.argmin(np.abs(tlist - t_r / 2)))
+i_rev = int(np.argmin(np.abs(tlist - t_r)))
+print(f"max |<sigma_x>| = {np.abs(rx).max():.1e} (trajectory is planar)")
+print(f"|r|(t_r/2) = {r[i_half]:.3f}, S(t_r/2) = {entropy[i_half]:.3f} bit; "
+      f"|r|(t_r) = {r[i_rev]:.3f}; min |r| = {r.min():.3f}")
+assert np.abs(rx).max() < 1e-6
 
-# ── Solve ───────────────────────────────────────────────────────────
-print("Running JC dynamics...")
-result = qt.mesolve(H_JC, psi0, tlist, e_ops=[])
-rx = np.array([qt.expect(sx, result.states[i]) for i in range(N_time)])
-ry = np.array([qt.expect(sy, result.states[i]) for i in range(N_time)])
-rz = np.array([qt.expect(sz, result.states[i]) for i in range(N_time)])
-bloch_r = np.sqrt(rx**2 + ry**2 + rz**2)
 
-# Von Neumann entropy
-print("Computing entanglement entropy...")
-entropy = np.zeros(N_time)
-for i in range(N_time):
-    rho_atom = result.states[i].ptrace(1)
-    entropy[i] = qt.entropy_vn(rho_atom, 2)
+def disc(ax):
+    th = np.linspace(0, 2 * np.pi, 300)
+    ax.plot(np.cos(th), np.sin(th), color='k', lw=0.7)
+    ax.axhline(0, color='0.8', lw=0.4); ax.axvline(0, color='0.8', lw=0.4)
+    ax.set_aspect('equal')
+    ax.set_xlim(-1.12, 1.12); ax.set_ylim(-1.12, 1.12)
+    ax.set_xticks([-1, 0, 1]); ax.set_yticks([-1, 0, 1])
+    ax.set_xlabel(r'$\langle\sigma_y\rangle$'); ax.set_ylabel(r'$\langle\sigma_z\rangle$')
 
-# ── Static figure: trajectory + entropy ─────────────────────────────
-fig = plt.figure(figsize=(14, 6))
-gs = gridspec.GridSpec(1, 3, width_ratios=[1.2, 1, 1], wspace=0.35)
 
-# 3D Bloch trajectory
-ax1 = fig.add_subplot(gs[0], projection='3d')
+def trajectory(ax, upto=None, cmap='viridis'):
+    n = len(tlist) if upto is None else upto + 1
+    pts = np.column_stack([ry[:n], rz[:n]]).reshape(-1, 1, 2)
+    lc = LineCollection(np.concatenate([pts[:-1], pts[1:]], axis=1), cmap=cmap,
+                        norm=plt.Normalize(0, t_max * g), lw=0.7, rasterized=True)
+    lc.set_array(tlist[:n - 1] * g)
+    ax.add_collection(lc)
+    return lc
 
-# Draw Bloch sphere wireframe
-u = np.linspace(0, 2*np.pi, 50)
-v = np.linspace(0, np.pi, 30)
-xs = np.outer(np.cos(u), np.sin(v))
-ys = np.outer(np.sin(u), np.sin(v))
-zs = np.outer(np.ones_like(u), np.cos(v))
-ax1.plot_surface(xs, ys, zs, alpha=0.05, color='lightblue')
 
-# Axes
-ax1.plot([-1.2, 1.2], [0, 0], [0, 0], 'k-', lw=0.3, alpha=0.3)
-ax1.plot([0, 0], [-1.2, 1.2], [0, 0], 'k-', lw=0.3, alpha=0.3)
-ax1.plot([0, 0], [0, 0], [-1.2, 1.2], 'k-', lw=0.3, alpha=0.3)
+# ---------------------------------------------------------------------------
+# Static figure
+# ---------------------------------------------------------------------------
+fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(FULL_W, 2.3),
+                                    gridspec_kw={'width_ratios': [1.3, 1, 1]})
+disc(ax1)
+lc = trajectory(ax1)
+cb = fig.colorbar(lc, ax=ax1, shrink=0.85, aspect=22, pad=0.03, ticks=[0, 10, 20])
+cb.set_label(r'$gt$', labelpad=1)
+box = dict(boxstyle='round,pad=0.12', fc='white', ec='none', alpha=0.85)
+for i, mk, lab, off, ha in ((0, 'o', r'$t = 0$', (0.10, -0.02), 'left'),
+                            (i_half, '*', r'$t_r/2$', (-0.06, -0.22), 'right'),
+                            (i_rev, '^', r'$t_r$', (-0.10, 0.10), 'right')):
+    ax1.plot(ry[i], rz[i], mk, ms=7.5 if mk == '*' else 4.5, mfc='white', mec='k', mew=0.8, zorder=6)
+    ax1.text(ry[i] + off[0], rz[i] + off[1], lab, fontsize=7.5, ha=ha, va='center', bbox=box, zorder=7)
+panel_label(ax1, 'a', x=-0.02, y=1.12)
 
-# Color by time
-colors = plt.cm.viridis(np.linspace(0, 1, N_time))
-for i in range(N_time - 1):
-    ax1.plot(rx[i:i+2], ry[i:i+2], rz[i:i+2],
-             color=colors[i], lw=0.8, alpha=0.7)
+ax2.plot(tlist * g, r, color=COLORS['blue'], lw=0.9)
+time_guides(ax2, t_r * g, labels=True)
+ax2.set_xlabel(r'$gt$'); ax2.set_ylabel(r'$|\mathbf{r}|$')
+ax2.set_xlim(0, t_max * g); ax2.set_ylim(0, 1.05)
+panel_label(ax2, 'b', x=-0.02, y=1.12)
 
-# Mark key points
-ax1.scatter(*[rx[0]], *[ry[0]], *[rz[0]], c='red', s=50, zorder=10,
-            label=r'$t=0$ (surface)')
-i_cat = np.argmin(np.abs(tlist - t_r/2))
-ax1.scatter(*[rx[i_cat]], *[ry[i_cat]], *[rz[i_cat]], c='gold', s=50,
-            zorder=10, marker='*', label=r'$t=t_r/2$ (near surface: disentangled, field = cat)')
-i_rev = np.argmin(np.abs(tlist - t_r))
-ax1.scatter(*[rx[i_rev]], *[ry[i_rev]], *[rz[i_rev]], c='lime', s=50,
-            zorder=10, marker='^', label=r'$t=t_r$ (inside: re-entangled)')
+ax3.plot(tlist * g, entropy, color=COLORS['red'], lw=0.9)
+ax3.axhline(1, color='0.6', lw=0.4)
+time_guides(ax3, t_r * g, labels=True)
+ax3.set_xlabel(r'$gt$'); ax3.set_ylabel(r'$S(\rho_{\rm atom})$ (bit)')
+ax3.set_xlim(0, t_max * g); ax3.set_ylim(-0.03, 1.08)
+panel_label(ax3, 'c', x=-0.02, y=1.12)
+save(fig, FIG_DIR / 'fig_bloch_sphere_trajectory', copy_to=(PAPER_FIG, SUPP_DIR))
 
-ax1.set_xlabel(r'$\langle\sigma_x\rangle$', fontsize=9)
-ax1.set_ylabel(r'$\langle\sigma_y\rangle$', fontsize=9)
-ax1.set_zlabel(r'$\langle\sigma_z\rangle$', fontsize=9)
-ax1.set_title('Bloch Sphere Trajectory', fontsize=11, fontweight='bold')
-ax1.legend(fontsize=7, loc='upper left')
-ax1.set_xlim(-1.1, 1.1)
-ax1.set_ylim(-1.1, 1.1)
-ax1.set_zlim(-1.1, 1.1)
 
-# Bloch vector magnitude
-ax2 = fig.add_subplot(gs[1])
-ax2.plot(tlist, bloch_r, 'steelblue', lw=1.2)
-ax2.axvline(t_c, color='blue', ls='--', lw=0.8, alpha=0.5, label=r'$t_c$')
-ax2.axvline(t_r, color='purple', ls='--', lw=0.8, alpha=0.5, label=r'$t_r$')
-ax2.axvline(t_r/2, color='red', ls='--', lw=0.8, alpha=0.5, label=r'$t_r/2$')
-ax2.set_xlabel(r'$gt$', fontsize=11)
-ax2.set_ylabel(r'$|\mathbf{r}|$', fontsize=11)
-ax2.set_title('Bloch Vector Length', fontsize=11, fontweight='bold')
-ax2.set_ylim(0, 1.05)
-ax2.legend(fontsize=8)
-ax2.text(0.5, 0.15, r'$|\mathbf{r}| \to 1$ at $t_r/2$: atom nearly pure,' + '\n'
-         + r'field $\approx$ cat state (weak entanglement)',
-         transform=ax2.transAxes, fontsize=8, ha='center',
-         bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.8))
-
-# Entropy
-ax3 = fig.add_subplot(gs[2])
-ax3.plot(tlist, entropy, 'crimson', lw=1.2)
-ax3.axvline(t_c, color='blue', ls='--', lw=0.8, alpha=0.5)
-ax3.axvline(t_r, color='purple', ls='--', lw=0.8, alpha=0.5)
-ax3.axvline(t_r/2, color='red', ls='--', lw=0.8, alpha=0.5)
-ax3.axhline(1, color='gray', ls=':', lw=0.5)
-ax3.set_xlabel(r'$gt$', fontsize=11)
-ax3.set_ylabel(r'$S(\rho_{\rm atom})$ [bits]', fontsize=11)
-ax3.set_title('Entanglement Entropy', fontsize=11, fontweight='bold')
-ax3.set_ylim(-0.05, 1.1)
-
-fig.suptitle(
-    r'Bloch Sphere Dynamics of the Reduced Atomic State — JC Model'
-    + f' ($\\bar{{n}} = {n_bar}$)',
-    fontsize=13, fontweight='bold', y=1.02
-)
-plt.tight_layout()
-fig.savefig(f'{FIG_DIR}/fig_bloch_sphere_trajectory.png', dpi=200,
-            bbox_inches='tight')
-fig.savefig(f'{FIG_DIR}/fig_bloch_sphere_trajectory.pdf',
-            bbox_inches='tight')
-print("Static figure saved.")
-plt.close()
-
-# ── GIF animation ───────────────────────────────────────────────────
-N_frames = 100
-frame_times = np.linspace(0, t_max, N_frames)
-frame_indices = [np.argmin(np.abs(tlist - ft)) for ft in frame_times]
-
-print("Generating Bloch sphere animation...")
-frames = []
-
-for fi, idx in enumerate(frame_indices):
+# ---------------------------------------------------------------------------
+# Animation
+# ---------------------------------------------------------------------------
+N_frames = 131                       # every 20th point of tlist: spacing t_r/100, so t_r/2 and t_r are frames
+frame_idx = np.unique(np.round(np.linspace(0, len(tlist) - 1, N_frames)).astype(int))
+assert i_half in frame_idx and i_rev in frame_idx
+frames, durations = [], []
+print("Rendering Bloch-vector animation ...")
+for idx in frame_idx:
     t_now = tlist[idx]
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8.0, 3.0),
+                                        gridspec_kw={'width_ratios': [1.05, 1, 1]})
+    disc(ax1)
+    ax1.plot(ry, rz, color='0.85', lw=0.4)
+    if idx > 0:
+        trajectory(ax1, upto=idx)
+    ax1.plot([0, ry[idx]], [0, rz[idx]], color=COLORS['red'], lw=1.0)
+    ax1.plot(ry[idx], rz[idx], 'o', color=COLORS['red'], ms=5, mec='k', mew=0.5, zorder=6)
+    ax1.set_title(rf'Bloch vector (y–z plane), $gt = {t_now * g:.1f}$', fontsize=9)
 
-    fig = plt.figure(figsize=(13, 5.5))
-    gs = gridspec.GridSpec(1, 3, width_ratios=[1.3, 1, 1], wspace=0.3)
-
-    # ─ 3D Bloch sphere
-    ax1 = fig.add_subplot(gs[0], projection='3d')
-
-    # Wireframe sphere
-    ax1.plot_surface(xs, ys, zs, alpha=0.04, color='lightblue')
-    # Great circles
-    theta_c = np.linspace(0, 2*np.pi, 100)
-    ax1.plot(np.cos(theta_c), np.sin(theta_c), np.zeros_like(theta_c),
-             'k-', lw=0.3, alpha=0.15)
-    ax1.plot(np.cos(theta_c), np.zeros_like(theta_c), np.sin(theta_c),
-             'k-', lw=0.3, alpha=0.15)
-    ax1.plot(np.zeros_like(theta_c), np.cos(theta_c), np.sin(theta_c),
-             'k-', lw=0.3, alpha=0.15)
-
-    # Trajectory up to now (trail)
-    trail_len = min(idx, 60)  # show last ~60 steps
-    start = max(0, idx - trail_len)
-    trail_alpha = np.linspace(0.1, 0.9, idx - start + 1) if idx > start else [0.9]
-    for j in range(start, idx):
-        a_val = trail_alpha[j - start]
-        ax1.plot(rx[j:j+2], ry[j:j+2], rz[j:j+2],
-                 color=(0.2, 0.4, 0.8, a_val), lw=1.2)
-
-    # Current point
-    ax1.scatter([rx[idx]], [ry[idx]], [rz[idx]], c='red', s=80, zorder=10,
-                edgecolors='darkred', linewidth=0.8)
-    # Line from center to point (shows |r|)
-    ax1.plot([0, rx[idx]], [0, ry[idx]], [0, rz[idx]],
-             'r-', lw=1.0, alpha=0.5)
-
-    # Axis labels
-    for coord, label, pos in [
-        ([1.3, 0, 0], r'$x$', 'x'),
-        ([0, 1.3, 0], r'$y$', 'y'),
-        ([0, 0, 1.3], r'$|e\rangle$', 'z')
-    ]:
-        ax1.text(*coord, label, fontsize=9, ha='center')
-    ax1.text(0, 0, -1.3, r'$|g\rangle$', fontsize=9, ha='center')
-
-    ax1.set_xlim(-1.2, 1.2)
-    ax1.set_ylim(-1.2, 1.2)
-    ax1.set_zlim(-1.2, 1.2)
-    ax1.set_axis_off()
-    ax1.view_init(elev=20, azim=30 + t_now * 2)  # slow rotation
-    ax1.set_title(f'Bloch Sphere\n$gt = {t_now:.1f}$',
-                  fontsize=11, fontweight='bold')
-
-    # ─ Bloch magnitude
-    ax2 = fig.add_subplot(gs[1])
-    ax2.plot(tlist[:idx+1], bloch_r[:idx+1], 'steelblue', lw=1.2)
-    ax2.plot(tlist[idx:], bloch_r[idx:], color='steelblue', lw=0.5, alpha=0.15)
-    ax2.plot(t_now, bloch_r[idx], 'ro', ms=7, zorder=5)
-    ax2.axvline(t_r, color='purple', ls='--', lw=0.7, alpha=0.4)
-    ax2.axvline(t_r/2, color='red', ls='--', lw=0.7, alpha=0.4)
-    ax2.set_xlim(0, t_max)
-    ax2.set_ylim(0, 1.05)
-    ax2.set_xlabel(r'$gt$', fontsize=10)
-    ax2.set_ylabel(r'$|\mathbf{r}| = \sqrt{2P-1}$', fontsize=10)
-    ax2.set_title('Bloch Vector Length', fontsize=11, fontweight='bold')
-
-    # Annotation for regime
-    r_now = bloch_r[idx]
-    if r_now > 0.7:
-        regime = 'Nearly pure\n(weak entanglement)'
-    elif r_now > 0.3:
-        regime = 'Partially mixed\n(growing entanglement)'
-    else:
-        regime = 'Maximally mixed\n(max entanglement)'
-    ax2.text(0.98, 0.95, regime, transform=ax2.transAxes, fontsize=8,
-             va='top', ha='right',
-             bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.8))
-
-    # ─ Entropy
-    ax3 = fig.add_subplot(gs[2])
-    ax3.plot(tlist[:idx+1], entropy[:idx+1], 'crimson', lw=1.2)
-    ax3.plot(tlist[idx:], entropy[idx:], color='crimson', lw=0.5, alpha=0.15)
-    ax3.plot(t_now, entropy[idx], 'ro', ms=7, zorder=5)
-    ax3.axhline(1, color='gray', ls=':', lw=0.5)
-    ax3.axvline(t_r, color='purple', ls='--', lw=0.7, alpha=0.4)
-    ax3.axvline(t_r/2, color='red', ls='--', lw=0.7, alpha=0.4)
-    ax3.set_xlim(0, t_max)
-    ax3.set_ylim(-0.05, 1.1)
-    ax3.set_xlabel(r'$gt$', fontsize=10)
-    ax3.set_ylabel(r'$S(\rho_{\rm atom})$ [bits]', fontsize=10)
-    ax3.set_title('Entanglement Entropy', fontsize=11, fontweight='bold')
-
-    fig.suptitle(
-        r'Bloch Sphere: Atomic State Inside $\Leftrightarrow$ '
-        + r'Entangled with Field',
-        fontsize=12, fontweight='bold', y=0.99
-    )
-
-    buf = io.BytesIO()
-    fig.savefig(buf, format='png', dpi=110, bbox_inches='tight')
-    buf.seek(0)
-    frames.append(Image.open(buf).copy())
-    buf.close()
-    plt.close(fig)
-
-    if (fi + 1) % 20 == 0:
-        print(f"  Frame {fi+1}/{N_frames}")
-
-# Save GIF with pauses
-durations = []
-for fi, idx in enumerate(frame_indices):
-    t_now = tlist[idx]
-    if abs(t_now - t_r/2) < t_max / N_frames * 1.5:
-        durations.append(300)
-    elif abs(t_now - t_r) < t_max / N_frames * 1.5:
-        durations.append(300)
-    elif t_now < 0.1:
-        durations.append(200)
-    else:
-        durations.append(80)
-
-gif_path = f'{ANIM_DIR}/anim_bloch_sphere.gif'
-frames[0].save(gif_path, save_all=True, append_images=frames[1:],
-               duration=durations, loop=0)
-print(f"Animation saved: {gif_path}")
-print("Done.")
+    for ax, y, c, lab in ((ax2, r, COLORS['blue'], r'$|\mathbf{r}|$'),
+                          (ax3, entropy, COLORS['red'], r'$S(\rho_{\rm atom})$ (bit)')):
+        ax.plot(tlist * g, y, color='0.82', lw=0.6)
+        ax.plot(tlist[:idx + 1] * g, y[:idx + 1], color=c, lw=1.0)
+        ax.plot(t_now * g, y[idx], 'o', color=c, ms=4.5, mec='k', mew=0.5, zorder=5)
+        time_guides(ax, t_r * g, labels=True)
+        ax.set_xlim(0, t_max * g); ax.set_ylim(-0.03, 1.08)
+        ax.set_xlabel(r'$gt$'); ax.set_ylabel(lab)
+    frames.append(fig_to_frame(fig, dpi=115))
+    step = t_max / N_frames
+    durations.append(1500 if abs(t_now - t_r / 2) < step / 2 or abs(t_now - t_r) < step / 2
+                     else (800 if idx == 0 else 90))
+save_gif(frames, ANIM_DIR / 'anim_bloch_sphere.gif', durations)

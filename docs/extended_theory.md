@@ -27,7 +27,7 @@ The practical implication is that **Wigner negativity, not Q-function structure,
 
 ### 2. Schrödinger Cat-State Wigner Function and Fidelity
 
-At time $t = t_r/2$, the JC interaction produces a cavity field state that closely approximates a two-component cat state whose branches sit at $\beta = \pm i\sqrt{\bar{n}}$ (on the $p$ axis, rotated by $\pm\pi/2$ from the initial amplitude $\alpha = \sqrt{\bar{n}}$) with a relative phase $\theta \approx 1.2\pi$ for $\bar{n} = 10$ — closer to an *odd* than to an even cat (photon-number parity $\langle(-1)^{\hat n}\rangle = -0.64$). For the algebra below we take the even cat along the real axis as the reference example; the JC cat is obtained by rotating $x \leftrightarrow p$ and changing the relative phase. The ideal even cat state and its normalization are
+At time $t = t_r/2$, the JC interaction produces a cavity field state that closely approximates a two-component cat state whose branches sit at $\beta = \pm i\sqrt{\bar{n}}$ (on the $p$ axis, rotated by $\pm\pi/2$ from the initial amplitude $\alpha = \sqrt{\bar{n}}$) with a relative phase $\theta \approx 1.2\pi$ for $\bar{n} = 10$ — closer to an *odd* than to an even cat (photon-number parity $\langle(-1)^{\hat n}\rangle = -0.64$). The phase depends on $\bar n$: the parity at $t_r/2$ is $-0.64$ for even integer $\bar n$ and $+0.64$ for odd integer $\bar n$ (see Sec. 6), so neither "odd" nor "even" is a general property of the JC cat. For the algebra below we take the even cat along the real axis as the reference example; the JC cat is obtained by rotating $x \leftrightarrow p$ and changing the relative phase. The ideal even cat state and its normalization are
 
 $$|\text{cat}^+\rangle = \mathcal{N}_+\bigl(|\alpha\rangle + |-\alpha\rangle\bigr), \qquad \mathcal{N}_+ = \frac{1}{\sqrt{2(1 + e^{-2|\alpha|^2})}}$$
 
@@ -45,7 +45,7 @@ $$\Delta_\text{fringe} = \frac{\pi}{\sqrt{2}\,\alpha} = \frac{\pi}{\sqrt{2\bar{n
 
 which for $\bar{n} = 10$ gives $0.70$, consistent with the simulated cross-section $W(x, p{=}0)$ (there the branches lie on the $p$ axis, so the fringes run along $x$).
 
-The most negative value of the ideal cat is reached at the first dark fringe next to the origin, $2\sqrt{2}\alpha p = \pi$, where $W_\text{cat} \approx -\tfrac{2}{\pi}e^{-\pi^2/(8\alpha^2)} \approx -0.28$ for $\bar{n} = 10$. The simulated JC cat, which has fidelity 0.78 with the best two-component cat, reaches $W \approx -0.25$.
+The most negative value of the ideal cat is reached at the first dark fringe next to the origin, $2\sqrt{2}\alpha p = \pi$, where $W_\text{cat} \approx -\tfrac{2}{\pi}e^{-\pi^2/(8\alpha^2)} \approx -0.28$ for $\bar{n} = 10$. The simulated JC cat, which has fidelity 0.78 with the best two-component cat, reaches $W \approx -0.25$. Its negativity, $\delta = 0.85$, is *larger* than that of the ideal cat of the same amplitude ($\delta = 0.63$, tending to $2/\pi$ for well-separated components), because the two JC components are deformed and carry negativity of their own.
 
 A key result is that **larger cat states have finer fringes.** Since $\Delta p \propto 1/\sqrt{\bar{n}}$, the fringe frequency grows with $\bar{n}$, making the interference pattern increasingly vulnerable to any smoothing process — whether instrumental (finite detector resolution) or physical (decoherence). This is the phase-space manifestation of the fragility of macroscopic superpositions.
 
@@ -53,7 +53,7 @@ We quantify the quality of the dynamically generated cat state using the **fidel
 
 $$F_\text{cat}(\bar{n}, \kappa/g) = \max_{\beta,\,\theta}\;\langle\text{cat}(\beta,\theta)|\,\rho_\text{field}(t_r/2)\,|\text{cat}(\beta,\theta)\rangle, \qquad |\text{cat}(\beta,\theta)\rangle \propto |\beta\rangle + e^{i\theta}|-\beta\rangle,$$
 
-with $\beta$ scanned in a neighbourhood of $i\sqrt{\bar{n}}$ and $\theta \in [0, 2\pi)$. Comparing instead with the even cat $|\alpha\rangle + |-\alpha\rangle$ on the real axis gives $F \approx 0$ for every $\bar{n} \gtrsim 3$, simply because the JC branches sit on the $p$ axis with a non-even relative phase — a comparison with the wrong reference state, not a property of the dynamics. With the correct reference, our phase diagram shows $F_\text{cat} \approx 0.78$ at $\kappa = 0$ for every $\bar{n}$ from 2 to 25: the anharmonic $\sqrt{n+1}$ spectrum limits the cat quality to a fixed value rather than degrading it with $\bar{n}$. Dissipation lowers $F_\text{cat}$ (0.54 and 0.46 at $\kappa/g = 0.01$ and 0.02 for $\bar{n} = 10$), and the $F_\text{cat} = 0.5$ boundary scales as $\bar{n}^{-1.25}$, tracking the $\delta = 0.05$ boundary.
+with $\beta$ scanned in a neighbourhood of $i\sqrt{\bar{n}}$ and $\theta \in [0, 2\pi)$. Comparing instead with the even cat $|\alpha\rangle + |-\alpha\rangle$ on the real axis gives $F \approx 0$ for every $\bar{n} \gtrsim 3$, simply because the JC branches sit on the $p$ axis with a non-even relative phase — a comparison with the wrong reference state, not a property of the dynamics. With the correct reference, our phase diagram shows $F_\text{cat} \approx 0.78$ at $\kappa = 0$ for every $\bar{n}$ from 2 to 25: the anharmonic $\sqrt{n+1}$ spectrum limits the cat quality to a fixed value rather than degrading it with $\bar{n}$. Dissipation lowers $F_\text{cat}$ (0.54 and 0.46 at $\kappa/g = 0.01$ and 0.02 for $\bar{n} = 10$), and the $F_\text{cat} = 0.5$ boundary lies at $\kappa/g = 0.014$ for $\bar n = 10$, a factor of 2.4 below the $\delta = 0.05$ boundary.
 
 ### 3. Microscopic Derivation of Enhanced Decoherence
 
@@ -81,11 +81,23 @@ The **decoherence time** is
 
 $$t_\text{dec} = \frac{1}{2\kappa\bar{n}}$$
 
-For the cat state to be observable, we need $t_\text{dec} \gtrsim t_r/2$, i.e., the cat must survive long enough to form. This requires
+For the cat state to be observable one might require $t_\text{dec} \gtrsim t_r/2$, i.e.
 
 $$\frac{1}{2\kappa\bar{n}} \gtrsim \frac{\pi\sqrt{\bar{n}}}{g} \qquad \Longrightarrow \qquad \frac{\kappa}{g} \lesssim \frac{1}{2\pi\bar{n}^{3/2}}$$
 
-For $\bar{n} = 10$ this crude criterion gives $\kappa/g \lesssim 0.005$, whereas the simulated $\delta = 0.05$ contour lies at $\kappa/g \approx 0.034$: the estimate is conservative because the branch separation, and with it the decoherence rate, builds up gradually during the collapse rather than being $2\sqrt{\bar{n}}$ from $t = 0$. The measured boundary scales as $\kappa_c/g \approx 0.46\,\bar{n}^{-1.14}$ (fit over $\bar{n} = 4$–$25$; $\bar{n}^{-1.26}$ for $\bar{n} \geq 8$, and $\bar{n}^{-1.25}$ for the $F_\text{cat} = 0.5$ boundary), i.e. between the naive $1/\bar{n}$ and the $\bar{n}^{-3/2}$ of this argument, which combines the $\bar{n}$-dependent decoherence rate with the $\bar{n}^{1/2}$-dependent formation time.
+For $\bar{n} = 10$ this crude criterion gives $\kappa/g \lesssim 0.005$, whereas the simulated $\delta = 0.05$ boundary lies at $\kappa/g = 0.033$. Two things are wrong with it. First, the two components are not $2\sqrt{\bar n}$ apart from $t = 0$: they rotate in opposite directions at the angular velocity $g/2\sqrt{\bar n}$, so
+
+$$|\Delta\alpha(t)| = 2\sqrt{\bar n}\,\sin\!\frac{gt}{2\sqrt{\bar n}}, \qquad \Gamma(t) = \tfrac12\kappa|\Delta\alpha(t)|^2 = 2\kappa\bar n\,\sin^2\!\frac{gt}{2\sqrt{\bar n}},$$
+
+and the accumulated decoherence up to $t_r/2$ is half of $2\kappa\bar n \cdot t_r/2$:
+
+$$\int_0^{t_r/2}\Gamma(t)\,dt = \frac{\pi\kappa\,\bar n^{3/2}}{g} \qquad\Longrightarrow\qquad \boxed{\frac{\delta(\kappa)}{\delta(0)} \approx \exp\!\left(-\frac{\pi\kappa\,\bar n^{3/2}}{g}\right)}$$
+
+Second, the threshold $\delta = 0.05$ is far below $\delta_0 \approx 0.85$, so the exponent at the boundary is $\ln(\delta_0/0.05) \approx 2.8$ rather than 1:
+
+$$\frac{\kappa_c}{g} \approx \frac{\ln(\delta_0/0.05)}{\pi\,\bar n^{3/2}} \approx 0.90\,\bar n^{-3/2}.$$
+
+For $\bar n = 10$ this gives 0.029 against the simulated 0.033, and the visibility formula gives 0.37 and 0.14 at $\kappa/g = 0.01$ and 0.02 against the simulated 0.40 and 0.17. At larger $\kappa$ the simulated negativity stays above the estimate (0.025 against 0.007 at $\kappa/g = 0.05$): the amplitude decay $e^{-\kappa t/2}$ shrinks the separation, and part of $\delta$ sits in the deformed lobes rather than in the fringes. The scaling collapse of $\delta/\delta_0$ against $\pi\kappa\bar n^{3/2}/g$ is shown in `figures/fig_phase_slices.png`.
 
 ### 4. Second-Order Coherence and the Photon Blockade Effect
 
@@ -131,7 +143,7 @@ The blockade condition is:
 
 $$\frac{g(2 - \sqrt{2})}{\kappa} \gg 1 \qquad \Longleftrightarrow \qquad \frac{g}{\kappa} \gg \frac{1}{2 - \sqrt{2}} \approx 1.71$$
 
-In practice, our simulations (drive on the polariton, $\varepsilon/\kappa = 0.05$) give $g^{(2)}(0) = 0.11$ at $g/\kappa = 5$ and $0.03$ at $g/\kappa = 10$, the finite linewidth and multi-level structure softening the ideal step. The laser must sit on a polariton for this to work: on bare-cavity resonance ($\omega_L = \omega_c$) it is detuned by $g$ from both single-photon transitions but only by $g/\sqrt{2}$ from the two-photon transition $|0\rangle \to |2,\pm\rangle$, so the cavity is nearly empty ($\langle n\rangle \sim 10^{-8}$ at $g/\kappa = 5$) and $g^{(2)}(0) \sim 10^7$ — bunching, not blockade.
+In practice, our simulations (drive on the polariton, $\varepsilon/\kappa = 0.05$) give $g^{(2)}(0) = 0.10$ at $g/\kappa = 5$ and $0.03$ at $g/\kappa = 10$, the finite linewidth and multi-level structure softening the ideal step. The laser must sit on a polariton for this to work: on bare-cavity resonance ($\omega_L = \omega_c$) it is detuned by $g$ from both single-photon transitions but only by $g/\sqrt{2}$ from the two-photon transition $|0\rangle \to |2,\pm\rangle$, so the cavity is nearly empty ($\langle n\rangle \sim 10^{-8}$ at $g/\kappa = 5$) and $g^{(2)}(0) \sim 10^7$ — bunching, not blockade.
 
 #### Drive Strength Crossover
 
@@ -162,7 +174,7 @@ $$S(\rho_\text{atom}) = h\!\left(\frac{1 + |\mathbf{r}|}{2}\right), \qquad h(p) 
 
 This provides a geometric interpretation of entanglement dynamics: **the atom's entanglement with the field is encoded in how far the Bloch vector has retreated from the surface toward the center** (for a globally pure state). During the collapse $|\mathbf{r}|$ drops rapidly from 1 to $\approx 0.2$ as the atom becomes strongly entangled with the field. At the cat-state time $t = t_r/2$ the Bloch vector has returned to $|\mathbf{r}| = 0.96$, close to the surface: the atom is nearly pure again because it has **disentangled** from the field, which is left in a nearly pure cat state (Gea-Banacloche, PRL **65**, 3385 (1990)). The cat state and the entanglement minimum are two descriptions of the same event.
 
-The trajectory itself is not a simple radial contraction. In 3D, the Bloch vector traces a **spiral** because the coherent Rabi dynamics (rotation about an axis in the $xz$-plane) compete with the dephasing caused by the spread of Fock-state Rabi frequencies. The spiral structure is visible in our Bloch sphere animations: at early times the atom precesses rapidly (Rabi oscillations), while the envelope of the spiral contracts (collapse). The spiral re-expands toward the surface at $t_r/2$, then contracts again around the revival $t_r$ ($|\mathbf{r}| \approx 0.5$, oscillating at the Rabi frequency) as the branches rephase and re-entangle.
+The trajectory itself is not a simple radial contraction. The Bloch vector traces a **spiral** in the $y$–$z$ plane ($\langle\sigma_x\rangle = 0$ for a real coherent amplitude on resonance) because the coherent Rabi dynamics (rotation about the $x$ axis) compete with the dephasing caused by the spread of Fock-state Rabi frequencies. The spiral structure is visible in our Bloch-vector animation: at early times the atom precesses rapidly (Rabi oscillations), while the envelope of the spiral contracts (collapse). The spiral re-expands toward the surface at $t_r/2$, then contracts again around the revival $t_r$ ($|\mathbf{r}| \approx 0.5$, oscillating at the Rabi frequency) as the branches rephase and re-entangle.
 
 ### 6. Photon Number Distribution Dynamics and the Number-Space Cat Signature
 
@@ -170,7 +182,7 @@ The photon number distribution $P(n,t) = \langle n|\rho_\text{field}(t)|n\rangle
 
 $$P(n,t) = p(n)\cos^2\!\bigl(g\sqrt{n+1}\,t\bigr) + p(n-1)\sin^2\!\bigl(g\sqrt{n}\,t\bigr), \qquad p(n) = e^{-\bar{n}}\frac{\bar{n}^n}{n!}.$$
 
-At $t = 0$ this is the Poisson distribution. At $t = t_r/2 = \pi\sqrt{\bar{n}}/g$ the phases $g\sqrt{n+1}\,t \approx \pi\bar{n} + \tfrac{\pi}{2}(n + 1 - \bar{n})$ alternate by $\pi/2$ from one $n$ to the next, so $\cos^2$ and $\sin^2$ switch between 0 and 1 with the *parity* of $n$: $P(n,t_r/2)$ becomes a comb in which (for $\bar{n} = 10$) odd photon numbers carry 82% of the weight and $\langle(-1)^{\hat n}\rangle = -0.64$. This is the number-space signature of the cat state: the two branches at $\pm i\sqrt{\bar{n}}$ have the *same* $|\beta|$, so their Poisson envelopes coincide and no bimodal split appears; what survives is their interference, an (approximately odd) parity comb. Such a comb provides an experimentally accessible signature of cat-state parity that does not require full Wigner tomography.
+At $t = 0$ this is the Poisson distribution. At $t = t_r/2 = \pi\sqrt{\bar{n}}/g$ the phases $g\sqrt{n+1}\,t \approx \pi\bar{n} + \tfrac{\pi}{2}(n + 1 - \bar{n})$ alternate by $\pi/2$ from one $n$ to the next, so $\cos^2$ and $\sin^2$ switch between 0 and 1 with the *parity* of $n$: $P(n,t_r/2)$ becomes a comb in which (for $\bar{n} = 10$) odd photon numbers carry 82% of the weight and $\langle(-1)^{\hat n}\rangle = -0.64$. This is the number-space signature of the cat state: the two branches at $\pm i\sqrt{\bar{n}}$ have the *same* $|\beta|$, so their Poisson envelopes coincide and no bimodal split appears; what survives is their interference, a parity comb. Because the phase above contains $\pi\bar n/2$, the comb shifts by one photon when $\bar n$ changes by one: it is odd for even integer $\bar n$ and even for odd integer $\bar n$ (parity $+0.64$ for $\bar n = 9$ or 11). Such a comb provides an experimentally accessible signature of cat-state parity that does not require full Wigner tomography.
 
 At the revival time $t_r$ the phases alternate by $\pi$ instead, the comb disappears and a single hump returns, but the anharmonicity of the JC spectrum ($\sqrt{n+1}$ rather than linear) prevents perfect recurrence. The distribution at $t = t_r$ is broader and more irregular than the initial Poissonian, with a variance that exceeds $\bar{n}$ — the field has acquired super-Poissonian statistics through its interaction with the atom.
 
@@ -180,15 +192,15 @@ The 2D parameter sweep over $(\bar{n}, \kappa/g)$ is the central new computation
 
 **Negativity grows with $\bar{n}$ at $\kappa = 0$.** In the ideal (lossless) case, larger $\bar{n}$ produces cat states with sharper interference fringes and larger $\delta$. The negativity saturates near $\delta \approx 0.88$ for $\bar{n} \gtrsim 14$, while the cat fidelity stays at $F_\text{cat} \approx 0.78$ for all $\bar{n} \geq 2$.
 
-**Decoherence accelerates with $\bar{n}$ at $\kappa > 0$.** From Sec. 3, the decoherence rate $\Gamma_\text{dec} = 2\kappa\bar{n}$ grows linearly with $\bar{n}$, while the formation time $t_r/2 = \pi\sqrt{\bar{n}}/g$ grows as $\sqrt{\bar{n}}$. The product $\Gamma_\text{dec} \cdot t_r/2 = 2\pi\kappa\bar{n}^{3/2}/g$ grows as $\bar{n}^{3/2}$, meaning that larger cat states are **exponentially harder to observe** at any fixed nonzero $\kappa$.
+**Decoherence accelerates with $\bar{n}$ at $\kappa > 0$.** From Sec. 3, the decoherence rate $\Gamma_\text{dec} = 2\kappa\bar{n}$ grows linearly with $\bar{n}$, while the formation time $t_r/2 = \pi\sqrt{\bar{n}}/g$ grows as $\sqrt{\bar{n}}$. Because the components separate gradually, the accumulated decoherence is $\int_0^{t_r/2}\Gamma\,dt = \pi\kappa\bar{n}^{3/2}/g$ (Sec. 3). It grows as $\bar{n}^{3/2}$, meaning that larger cat states are **exponentially harder to observe** at any fixed nonzero $\kappa$.
 
 The **critical decay rate** for cat-state survival scales as
 
 $$\frac{\kappa_\text{crit}}{g} \sim \frac{C}{\bar{n}^{3/2}}$$
 
-where $C$ is a threshold constant that depends on the observability criterion for $\delta$. Our phase diagram gives $\kappa_c/g \approx 0.46\,\bar{n}^{-1.14}$ over $\bar{n} = 4$–$25$ ($\bar{n}^{-1.26}$ for $\bar{n} \geq 8$): steeper than the naive $1/\bar{n}$ but shallower than this $\bar{n}^{-3/2}$ estimate, because the branch separation grows gradually during the collapse.
+where $C$ is a threshold constant that depends on the observability criterion for $\delta$; Sec. 3 gives $C = \ln(\delta_0/0.05)/\pi \approx 0.90$. The simulated boundary (logarithmic $\kappa$ grid, $10^{-3}$ to 0.2) is $\kappa_c/g = 0.107$, 0.055, 0.033, 0.018 and 0.009 for $\bar n = 3$, 6, 10, 16 and 25. It is not a single power law: a fit over $\bar n \ge 3$ gives $0.45\,\bar n^{-1.16}$, but the local slope steepens with $\bar n$ and a fit over $\bar n \ge 10$ gives $0.95\,\bar n^{-1.43}$, approaching the $\bar n^{-3/2}$ of the estimate. (An earlier version of these notes quoted $0.46\,\bar n^{-1.14}$ as the law; that came from a linear $\kappa$ grid with step 0.01, too coarse to resolve the boundary for $\bar n > 15$.)
 
-The parameter slices provide practical design guidance. To observe a cat state with $\delta > 0.05$ at $\bar{n} = 10$, one requires $\kappa/g \lesssim 0.034$, i.e., $g/\kappa \gtrsim 30$. This condition is achievable in microwave cavity QED ($g/\kappa \sim 10^4$) and circuit QED ($g/\kappa \sim 100\text{–}300$), but remains challenging in optical cavities where typical $g/\kappa \sim 1\text{–}10$.
+The parameter slices provide practical design guidance. To observe a cat state with $\delta > 0.05$ at $\bar{n} = 10$, one requires $\kappa/g \lesssim 0.033$, i.e., $g/\kappa \gtrsim 30$. This condition is achievable in microwave cavity QED ($g/\kappa \sim 10^4$) and circuit QED ($g/\kappa \sim 100\text{–}300$), but remains challenging in optical cavities where typical $g/\kappa \sim 1\text{–}10$.
 
 ---
 

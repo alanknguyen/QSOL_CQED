@@ -1,330 +1,319 @@
 # sim_entanglement_dynamics.py
-# Von Neumann entropy of the reduced atomic state S(rho_atom) and field
-# purity Tr[rho_field^2] in the Jaynes-Cummings model.
+# Atom-field entanglement in the Jaynes-Cummings model: von Neumann entropy of
+# the reduced atom S(rho_atom), logarithmic negativity E_N, and field purity
+# Tr[rho_field^2].
 #
 # Nguyen Khoi Nguyen (Alan)
 # Dept. of Physics, Boston University
-# Advised by Prof. Luca Dal Negro
+# Began as a course project taught by Prof. Luca Dal Negro
 #
-# Generates: fig_entanglement_comparison, fig_coherent_entropy_purity,
-#            fig_entropy_nbar_scaling, fig_dissipative_entanglement
+# Generates (paper/figures/): fig_entanglement_comparison,
+#     fig_coherent_entropy_purity, fig_entropy_nbar_scaling,
+#     fig_dissipative_entanglement
 #
 # Interpretation (coherent field, atom initially excited):
-#   * early collapse (gt ~ 1-3): S -> 1 bit, atom and field strongly
-#     entangled; the reduced field is a two-branch MIXTURE (P ~ 0.5).
-#   * half revival t_r/2: S reaches a MINIMUM (~0.15 bit) and the field
-#     purity a maximum (~0.96): the atom and field approximately
-#     disentangle and the field is a nearly pure Schrodinger cat
+#   * collapse (gt ~ 1-3): S -> 1 bit, atom and field strongly entangled; the
+#     reduced field is a two-branch MIXTURE (purity ~ 0.5).
+#   * half revival t_r/2: S reaches a MINIMUM (0.14 bit) and the field purity
+#     a maximum (0.96): the atom and field approximately disentangle and the
+#     field is a nearly pure Schrodinger cat
 #     (Gea-Banacloche, PRL 65, 3385 (1990); Phoenix & Knight 1991).
-#   * full revival t_r: the branches rephase, S is again close to 1 bit.
+#   * revival t_r: the branches meet again and S is back near 0.8 bit.
 #
-# S(rho_atom) is an entanglement measure only for a globally PURE
-# atom-field state (coherent, Fock, squeezed-vacuum initial fields with
-# no dissipation).  For the thermal field and for kappa > 0 the global
-# state is mixed and S(rho_atom) measures total (quantum + classical)
-# correlations.  We therefore also compute the logarithmic negativity
+# S(rho_atom) is an entanglement measure only for a globally PURE atom-field
+# state (coherent, Fock, squeezed-vacuum initial fields without dissipation).
+# For the thermal field and for kappa > 0 the global state is mixed and
+# S(rho_atom) also counts classical correlations.  We therefore also compute
 #   E_N = log2 || rho^{T_atom} ||_1,
-# which is a proper entanglement monotone for mixed states (E_N = 1 for a
-# maximally entangled atom-field pair, 0 for separable states).
+# an entanglement monotone for mixed states (E_N = 1 for a maximally entangled
+# atom-field pair, 0 for separable states).  For a pure state with Schmidt
+# probabilities (l1, l2) it reduces to E_N = log2(1 + 2 sqrt(l1 l2)).
 
 import numpy as np
 import matplotlib.pyplot as plt
-from pathlib import Path
-from qutip import (
-    basis, tensor, destroy, sigmaz, sigmam, sigmap, mesolve, ptrace,
-    entropy_vn, coherent, thermal_dm, squeeze, qeye, ket2dm, expect, num,
-    negativity,
-)
+from qutip import (basis, tensor, destroy, sigmaz, sigmam, mesolve, entropy_vn, coherent,
+                   thermal_dm, qeye, ket2dm, expect, num, negativity)
 
-PAPER_FIG = Path(__file__).resolve().parents[1] / 'paper' / 'figures'
-PAPER_FIG.mkdir(parents=True, exist_ok=True)
+from plotstyle import (use_style, save, panel_label, time_guides, sequential_colors,
+                       FULL_W, COLORS, GUIDE_HALF, GUIDE_FULL, PAPER_FIG)
+from utils import squeezed_vacuum
+
+use_style()
 
 # -- Parameters --
 g = 1.0
 n_bar = 10.0
 alpha = np.sqrt(n_bar)
 t_revival = 2 * np.pi * np.sqrt(n_bar) / g
-t_collapse = 1.0 / g
 
 # Fock-space truncation per initial state.  Coherent and Fock states with
 # n_bar = 10 have negligible weight above n = 50.  Thermal and squeezed-vacuum
-# photon distributions have geometric / heavy tails: at N = 50 the truncated
-# states have <n> = 9.57 (thermal) and 9.15 (squeezed) instead of 10.
-# N = 150 restores <n> = 10.000 and keeps the truncated weight below 1e-6.
-N_CAV = {
-    'Coherent': 50,
-    'Thermal': 150,
-    'Squeezed vacuum': 150,
-    'Fock $|10\\rangle$': 50,
+# photon distributions have heavy tails: at N = 50 the truncated states have
+# <n> = 9.57 (thermal) and 9.15 (squeezed) instead of 10.  The weight beyond
+# N is (10/11)^N for the thermal state (6e-7 at N = 150) and falls more slowly
+# for the squeezed vacuum (1.6e-4 at N = 150, 9e-8 at N = 300).
+STATES = {
+    #  key        label              N_cav  colour
+    'coherent': ('coherent',          50, COLORS['blue']),
+    'thermal':  ('thermal',          150, COLORS['red']),
+    'squeezed': ('squeezed vacuum',  300, COLORS['green']),
+    'fock':     (r'Fock $|10\rangle$', 50, COLORS['orange']),
 }
-COLORS = {'Coherent': '#2166ac', 'Thermal': '#b2182b',
-          'Squeezed vacuum': '#1b7837', 'Fock $|10\\rangle$': '#e08214'}
 
 
 def jc_ops(N):
     a = tensor(destroy(N), qeye(2))
     sm = tensor(qeye(N), sigmam())
-    sp = tensor(qeye(N), sigmap())
     sz = tensor(qeye(N), sigmaz())
-    H = g * (a.dag() * sm + a * sp)        # resonant JC, rotating frame
+    H = g * (a.dag() * sm + a * sm.dag())       # resonant JC, interaction picture
     return a, sz, H
 
 
-def field_state(label, N):
-    if label == 'Coherent':
+def field_state(key, N):
+    if key == 'coherent':
         return coherent(N, alpha)
-    if label == 'Thermal':
+    if key == 'thermal':
         return thermal_dm(N, n_bar)
-    if label == 'Squeezed vacuum':
-        r = np.arcsinh(np.sqrt(n_bar))       # <n> = sinh^2(r)
-        return squeeze(N, r) * basis(N, 0)
-    if label.startswith('Fock'):
+    if key == 'squeezed':
+        return squeezed_vacuum(N, n_bar)        # <n> = sinh^2(r) = n_bar
+    if key == 'fock':
         return basis(N, int(n_bar))
-    raise ValueError(label)
+    raise ValueError(key)
 
 
-def run_jc(label, N, tlist, kappa=0.0):
-    """Evolve |e> x rho_field; return inversion, S(rho_atom), Tr[rho_field^2]."""
+def log_negativity(state):
+    """E_N = log2 ||rho^{T_atom}||_1; closed form for kets, trace norm otherwise."""
+    if state.isket:
+        lam = np.clip(np.linalg.eigvalsh(state.ptrace(1).full()), 0.0, 1.0)
+        return float(np.log2(1.0 + 2.0 * np.sqrt(lam[0] * lam[1])))
+    return float(negativity(state, 1, logarithmic=True))
+
+
+def run_jc(key, N, tlist, kappa=0.0):
+    """Evolve |e> x rho_field and return inversion, S(rho_atom), E_N, field purity."""
     a, sz, H = jc_ops(N)
-    phi = field_state(label, N)
+    phi = field_state(key, N)
     atom = basis(2, 0)
-    if phi.isket:
-        rho0 = tensor(phi, atom)              # ket: sesolve path, much faster
-    else:
-        rho0 = tensor(phi, ket2dm(atom))
-    n0 = expect(num(N), phi)
+    # kets are propagated as kets (fast); the thermal field needs the density matrix
+    rho0 = tensor(phi, atom) if phi.isket else tensor(phi, ket2dm(atom))
     c_ops = [np.sqrt(kappa) * a] if kappa > 0 else []
-    res = mesolve(H, rho0, tlist, c_ops, [sz], options={'store_states': True})
-    S = np.array([entropy_vn(ptrace(st, 1), 2) for st in res.states])
-    P = np.array([(ptrace(st, 0) ** 2).tr().real for st in res.states])
-    EN = np.array([negativity(st if st.isoper else ket2dm(st), 1, logarithmic=True)
-                   for st in res.states])
-    return dict(inversion=np.array(res.expect[0]), entropy=S, purity=P,
-                logneg=EN, n0=n0)
+    res = mesolve(H, rho0, tlist, c_ops=c_ops, e_ops=[sz], options={'store_states': True})
+    return dict(
+        inversion=np.array(res.expect[0]),
+        entropy=np.array([entropy_vn(st.ptrace(1), 2) for st in res.states]),
+        purity=np.array([(st.ptrace(0) ** 2).tr().real for st in res.states]),
+        logneg=np.array([log_negativity(st) for st in res.states]),
+        n0=expect(num(N), phi),
+    )
 
 
 # ---------------------------------------------------------------------------
 # Solve for the four initial field states
 # ---------------------------------------------------------------------------
-tlist = np.linspace(0, 1.8 * t_revival, 2000)
+tlist = np.linspace(0, 1.8 * t_revival, 2400)
+t_fock = np.linspace(0, 3.0 / g, 600)
 results = {}
-for label, N in N_CAV.items():
-    print(f"Solving: {label}  (N_cav = {N})")
-    results[label] = run_jc(label, N, tlist)
-    d = results[label]
-    print(f"  <n>(0) = {d['n0']:.4f}   max S = {d['entropy'].max():.3f} bits   "
-          f"max E_N = {d['logneg'].max():.3f}   min P = {d['purity'].min():.3f}")
+for key, (label, N, _) in STATES.items():
+    print(f"Solving: {key}  (N_cav = {N})")
+    results[key] = run_jc(key, N, t_fock if key == 'fock' else tlist)
+    d = results[key]
+    print(f"  <n>(0) = {d['n0']:.5f}   max S = {d['entropy'].max():.3f} bit   "
+          f"max E_N = {d['logneg'].max():.3f}   min purity = {d['purity'].min():.3f}")
 
-i_half = np.argmin(np.abs(tlist - 0.5 * t_revival))
-i_rev = np.argmin(np.abs(tlist - t_revival))
-coh = results['Coherent']
+# closed-form E_N for kets agrees with the general trace-norm routine
+_a, _sz, _H = jc_ops(50)
+_st = mesolve(_H, tensor(coherent(50, alpha), basis(2, 0)), [0, 3.3]).states[-1]
+assert abs(log_negativity(_st) - negativity(ket2dm(_st), 1, logarithmic=True)) < 1e-7
+
+i_half = int(np.argmin(np.abs(tlist - 0.5 * t_revival)))
+i_rev = int(np.argmin(np.abs(tlist - t_revival)))
+coh, th, sq = results['coherent'], results['thermal'], results['squeezed']
 print(f"Coherent: S(t_r/2) = {coh['entropy'][i_half]:.3f}, S(t_r) = {coh['entropy'][i_rev]:.3f}, "
       f"P(t_r/2) = {coh['purity'][i_half]:.3f}, P(t_r) = {coh['purity'][i_rev]:.3f}, "
       f"E_N(t_r/2) = {coh['logneg'][i_half]:.3f}, E_N(t_r) = {coh['logneg'][i_rev]:.3f}")
-th = results['Thermal']
-print(f"Thermal: S(gt>2) mean = {th['entropy'][tlist > 2].mean():.3f}, "
-      f"E_N mean (gt>2) = {th['logneg'][tlist > 2].mean():.3f}, E_N max = {th['logneg'].max():.3f}")
-
-
-def mark_times(ax, labels=False):
-    """Vertical guides at t_r/2 (dotted) and t_r (dashed); labels go in the legend."""
-    ax.axvline(0.5 * t_revival * g, color='crimson', lw=0.8, ls=':', alpha=0.7,
-               label=r'$t_r/2$' if labels else None)
-    ax.axvline(t_revival * g, color='purple', lw=0.8, ls='--', alpha=0.5,
-               label=r'$t_r$' if labels else None)
+late = tlist * g > 2
+print(f"Thermal: S(gt>2) mean = {th['entropy'][late].mean():.3f}, min = {th['entropy'][late].min():.3f}; "
+      f"E_N(gt>2) mean = {th['logneg'][late].mean():.3f}, max = {th['logneg'].max():.3f}")
+print(f"Squeezed: S(gt>2) min = {sq['entropy'][late].min():.3f}, mean = {sq['entropy'][late].mean():.3f}")
 
 
 # ---------------------------------------------------------------------------
-# Fig 5: inversion and entropy for the four field states
+# Fig 5: inversion and entanglement for the four field states
+#        rows = initial field, left = <sigma_z>, right = S (coloured) and E_N (thin black)
 # ---------------------------------------------------------------------------
-fock = 'Fock $|10\\rangle$'
-fig1 = plt.figure(figsize=(11, 9.5))
-gs = fig1.add_gridspec(3, 1, height_ratios=[3, 1.3, 3], hspace=0.32)
-ax1 = fig1.add_subplot(gs[0])
-axf = fig1.add_subplot(gs[1])
-ax2 = fig1.add_subplot(gs[2], sharex=ax1)
+fig5 = plt.figure(figsize=(FULL_W, 6.1))
+gs5 = fig5.add_gridspec(4, 2, height_ratios=[1, 1, 1, 1.2])
+ax_t = np.array([[fig5.add_subplot(gs5[r, c]) for c in range(2)] for r in range(3)])
+ax_b = [fig5.add_subplot(gs5[3, c]) for c in range(2)]
+for r in range(2):                       # rows (a)-(f) share the time axis
+    for c in range(2):
+        ax_t[r, c].sharex(ax_t[2, c])
+        ax_t[r, c].tick_params(labelbottom=False)
+letters = iter('abcdefgh')
 
-# (a) inversion: the three states with a spread of Rabi frequencies
-for label in ('Coherent', 'Thermal', 'Squeezed vacuum'):
-    ax1.plot(tlist * g, results[label]['inversion'], color=COLORS[label],
-             lw=0.7, alpha=0.9, label=label)
-ax1.set_ylabel(r'$\langle \sigma_z \rangle$', fontsize=13)
-ax1.set_title(rf'(a) Atomic inversion, $\bar{{n}} = {n_bar:.0f}$, $\Delta = 0$', fontsize=12)
-ax1.axhline(0, color='gray', lw=0.5, ls='--')
-ax1.set_ylim(-1.1, 1.1)
-mark_times(ax1, labels=True)
-ax1.legend(fontsize=8, loc='upper right', ncol=5, framealpha=0.95)
-ax1.tick_params(labelbottom=False)
 
-# (b) Fock |10>: a single Rabi frequency 2g sqrt(11), no collapse; short window
-mwin = tlist * g < 3.0
-axf.plot(tlist[mwin] * g, results[fock]['inversion'][mwin], color=COLORS[fock], lw=1.0,
-         label=r'$\langle\sigma_z\rangle$, period $\pi/(g\sqrt{11})$')
-axf.plot(tlist[mwin] * g, 2 * results[fock]['entropy'][mwin] - 1, color='#7f3b08', lw=0.9, ls='--',
-         label=r'$2S - 1$, period $\pi/(2g\sqrt{11})$')
-axf.axhline(0, color='gray', lw=0.4, ls='--')
-axf.set_ylim(-1.15, 1.15)
-axf.set_xlim(0, 3.0)
-axf.set_xlabel(r'$gt$', fontsize=10)
-axf.set_title(r'(b) Fock $|10\rangle$: periodic Rabi oscillation and entropy (no collapse)', fontsize=10)
-axf.legend(fontsize=7, loc='upper right', ncol=2, framealpha=0.95)
-axf.tick_params(labelsize=8)
+def draw_row(ax_inv, ax_ent, key, t):
+    label, _, color = STATES[key]
+    d = results[key]
+    ax_inv.plot(t * g, d['inversion'], color=color, lw=0.6)
+    ax_inv.axhline(0, color='0.6', lw=0.4)
+    ax_inv.set_ylim(-1.1, 1.1)
+    ax_inv.set_yticks([-1, 0, 1])
+    ax_inv.set_ylabel(r'$\langle \sigma_z \rangle$')
+    panel_label(ax_inv, next(letters), f'{label} field')
+    ax_ent.plot(t * g, d['entropy'], color=color, lw=1.0, label=r'$S(\rho_{\rm atom})$')
+    # thin solid black: on the rapidly fluctuating thermal trace a dashed line reads as noise
+    ax_ent.plot(t * g, d['logneg'], color='k', lw=0.55, label=r'$E_{\mathcal{N}}$')
+    ax_ent.axhline(1.0, color='0.6', lw=0.4)
+    ax_ent.set_ylim(-0.05, 1.1)
+    ax_ent.set_yticks([0, 0.5, 1])
+    ax_ent.set_ylabel(r'$S$ (bit), $E_{\mathcal{N}}$')
+    panel_label(ax_ent, next(letters))
 
-# (c) entropy (solid) and logarithmic negativity (dashed)
-for label in ('Coherent', 'Thermal', 'Squeezed vacuum'):
-    ax2.plot(tlist * g, results[label]['entropy'], color=COLORS[label],
-             lw=1.0, alpha=0.9, label=label)
-    ax2.plot(tlist * g, results[label]['logneg'], color=COLORS[label],
-             lw=0.9, ls='--', alpha=0.8)
-ax2.plot([], [], color='k', lw=1.0, label=r'$S(\rho_{\rm atom})$')
-ax2.plot([], [], color='k', lw=0.9, ls='--', label=r'$E_{\mathcal{N}}$')
-ax2.set_ylabel(r'$S(\rho_{\rm atom})$ [bits],  $E_{\mathcal{N}}$', fontsize=12)
-ax2.set_xlabel(r'$gt$', fontsize=13)
-ax2.set_title(r'(c) Reduced-atom entropy $S$ (solid) and logarithmic negativity $E_{\mathcal{N}}$ (dashed)',
-              fontsize=11)
-ax2.set_ylim(-0.05, 1.15)
-ax2.axhline(1.0, color='gray', lw=0.5, ls=':')
-mark_times(ax2, labels=True)
-ax2.legend(fontsize=7, loc='lower right', ncol=4, framealpha=0.95)
-ax2.text(0.01, 0.03, r'thermal: global state mixed, $S \approx 1$ but $E_{\mathcal{N}} \approx 0.2$',
-         transform=ax2.transAxes, fontsize=7, color=COLORS['Thermal'])
 
-fig1.savefig(PAPER_FIG / 'fig_entanglement_comparison.png', dpi=200, bbox_inches='tight')
-fig1.savefig(PAPER_FIG / 'fig_entanglement_comparison.pdf', bbox_inches='tight')
-print("\nSaved: fig_entanglement_comparison")
+for row, key in enumerate(('coherent', 'thermal', 'squeezed')):
+    draw_row(ax_t[row, 0], ax_t[row, 1], key, tlist)
+    for ax in ax_t[row]:
+        time_guides(ax, t_revival * g)
+        ax.set_xlim(0, tlist[-1] * g)
+ax_t[0, 0].text(0.5 * t_revival * g + 0.4, -1.02, r'$t_r/2$', fontsize=8, va='bottom',
+                color=GUIDE_HALF['color'])
+ax_t[0, 0].text(t_revival * g + 0.4, -1.02, r'$t_r$', fontsize=8, va='bottom',
+                color=GUIDE_FULL['color'])
+ax_t[0, 1].legend(loc='lower right', bbox_to_anchor=(1.0, 0.98), ncol=2, columnspacing=1.0,
+                  borderaxespad=0.0)
+for ax in ax_t[-1]:
+    ax.set_xlabel(r'$gt$')
+
+draw_row(ax_b[0], ax_b[1], 'fock', t_fock)
+for ax in ax_b:
+    ax.set_xlim(0, t_fock[-1] * g)
+    ax.set_xlabel(r'$gt$')
+save(fig5, PAPER_FIG / 'fig_entanglement_comparison')
 
 
 # ---------------------------------------------------------------------------
-# Fig 6: coherent state detail: inversion, entropy, field purity
+# Fig 6: coherent field in detail: inversion, entropy, field purity
 # ---------------------------------------------------------------------------
-fig2, (ax2a, ax2b, ax2c) = plt.subplots(3, 1, figsize=(11, 8.5), sharex=True)
-S = coh['entropy']; P = coh['purity']
+S, P = coh['entropy'], coh['purity']
+fig6, (ax6a, ax6b, ax6c) = plt.subplots(3, 1, figsize=(FULL_W, 4.9), sharex=True)
+arrow = dict(arrowstyle='->', lw=0.6, shrinkA=1, shrinkB=2)
+# white backing, so the t_r/2 and t_r guide lines do not strike through the annotations
+note_box = dict(boxstyle='square,pad=0.15', fc='white', ec='none')
 
-ax2a.plot(tlist * g, coh['inversion'], 'b-', lw=0.7)
-ax2a.set_ylabel(r'$\langle \sigma_z \rangle$', fontsize=13)
-ax2a.set_title(rf'Coherent-state field ($\alpha = {alpha:.2f}$, $\bar{{n}} = {n_bar:.0f}$)', fontsize=13)
-ax2a.axhline(0, color='gray', lw=0.5, ls='--')
-ax2a.set_ylim(-1.1, 1.1)
-mark_times(ax2a, labels=True)
-ax2a.legend(fontsize=9, loc='upper right', ncol=2, framealpha=0.95)
+ax6a.plot(tlist * g, coh['inversion'], color=COLORS['blue'], lw=0.7)
+ax6a.axhline(0, color='0.6', lw=0.4)
+ax6a.set_ylabel(r'$\langle \sigma_z \rangle$')
+ax6a.set_ylim(-1.1, 1.1)
+ax6a.set_yticks([-1, 0, 1])
+time_guides(ax6a, t_revival * g, labels=True)
+panel_label(ax6a, 'a')
 
-ax2b.plot(tlist * g, S, 'r-', lw=1.0)
-ax2b.set_ylabel(r'$S(\rho_{\rm atom})$ [bits]', fontsize=13)
-ax2b.set_ylim(-0.05, 1.15)
-ax2b.axhline(1.0, color='gray', lw=0.5, ls=':')
-i_peak = np.argmax(S[tlist * g < 5])
-ax2b.annotate('near-maximal entanglement\nduring collapse',
-              xy=(tlist[i_peak] * g, S[i_peak]), xytext=(6.5, 0.95),
-              fontsize=9, color='red', ha='left', va='center',
-              arrowprops=dict(arrowstyle='->', color='red'))
-ax2b.annotate(rf'entropy minimum $S \approx {S[i_half]:.2f}$ at $t_r/2$:' '\n'
-              'atom and field disentangle,\nfield $\\approx$ pure cat state',
-              xy=(tlist[i_half] * g, S[i_half]), xytext=(13.5, 0.30),
-              fontsize=9, color='red', ha='left', va='center',
-              arrowprops=dict(arrowstyle='->', color='red'))
-mark_times(ax2b)
+ax6b.plot(tlist * g, S, color=COLORS['red'], lw=1.0)
+ax6b.axhline(1.0, color='0.6', lw=0.4)
+ax6b.set_ylabel(r'$S(\rho_{\rm atom})$ (bit)')
+ax6b.set_ylim(-0.05, 1.18)
+ax6b.set_yticks([0, 0.5, 1])
+time_guides(ax6b, t_revival * g)
+i_peak = int(np.argmax(S[tlist * g < 5]))
+ax6b.annotate('collapse: atom and field entangled',
+              xy=(tlist[i_peak] * g, S[i_peak]), xytext=(3.6, 1.09),
+              fontsize=8, ha='left', va='center', arrowprops=arrow, bbox=note_box)
+ax6b.annotate(rf'$S = {S[i_half]:.2f}$ bit: disentangled',
+              xy=(tlist[i_half] * g, S[i_half]), xytext=(12.6, 0.07),
+              fontsize=8, ha='left', va='center', arrowprops=arrow, bbox=note_box)
+panel_label(ax6b, 'b')
 
-ax2c.plot(tlist * g, P, color='#1b7837', lw=1.0)
-ax2c.set_ylabel(r'$\mathcal{P} = \mathrm{Tr}(\rho_{\rm field}^2)$', fontsize=13)
-ax2c.set_xlabel(r'$gt$', fontsize=13)
-ax2c.set_ylim(-0.05, 1.05)
-ax2c.axhline(0.5, color='gray', lw=0.5, ls=':')
-ax2c.annotate(rf'$\mathcal{{P}} \approx {P[i_half]:.2f}$: nearly pure cat',
-              xy=(tlist[i_half] * g, P[i_half]), xytext=(13.5, 0.92),
-              fontsize=9, color='#1b7837', ha='left',
-              arrowprops=dict(arrowstyle='->', color='#1b7837'))
-i_pmin = np.argmin(P[tlist * g < 5])
-ax2c.annotate(r'$\mathcal{P} \to 0.5$: two-branch mixture' '\n(field entangled with atom)',
-              xy=(tlist[i_pmin] * g, P[i_pmin]), xytext=(6.5, 0.25),
-              fontsize=9, color='#1b7837', ha='left', va='center',
-              arrowprops=dict(arrowstyle='->', color='#1b7837'))
-mark_times(ax2c)
-
-fig2.tight_layout()
-fig2.savefig(PAPER_FIG / 'fig_coherent_entropy_purity.png', dpi=200, bbox_inches='tight')
-fig2.savefig(PAPER_FIG / 'fig_coherent_entropy_purity.pdf', bbox_inches='tight')
-print("Saved: fig_coherent_entropy_purity")
+ax6c.plot(tlist * g, P, color=COLORS['green'], lw=1.0)
+ax6c.axhline(0.5, color='0.6', lw=0.4)
+ax6c.set_ylabel(r'$\mathcal{P} = \mathrm{Tr}\,\rho_{\rm field}^2$')
+ax6c.set_xlabel(r'$gt$')
+ax6c.set_ylim(0.38, 1.06)
+ax6c.set_yticks([0.5, 0.75, 1.0])
+time_guides(ax6c, t_revival * g)
+i_pmin = int(np.argmin(P[tlist * g < 5]))
+ax6c.annotate(rf'$\mathcal{{P}} = {P[i_half]:.2f}$: nearly pure cat state',
+              xy=(tlist[i_half] * g, P[i_half]), xytext=(12.2, 1.005),
+              fontsize=8, ha='left', va='center', arrowprops=arrow, bbox=note_box)
+ax6c.annotate(r'$\mathcal{P} \approx 1/2$: two-branch mixture',
+              xy=(tlist[i_pmin] * g, P[i_pmin]), xytext=(4.6, 0.44),
+              fontsize=8, ha='left', va='center', arrowprops=arrow, bbox=note_box)
+panel_label(ax6c, 'c')
+ax6c.set_xlim(0, tlist[-1] * g)
+save(fig6, PAPER_FIG / 'fig_coherent_entropy_purity')
 
 
 # ---------------------------------------------------------------------------
-# Fig 7: entropy vs time for varying <n>  (t_c ~ 1/g, t_r = 2 pi sqrt(n)/g)
+# Fig 7: entropy for increasing <n>  (collapse ~ 1/g, t_r = 2 pi sqrt(n)/g)
 # ---------------------------------------------------------------------------
 n_bar_values = [1, 4, 9, 16, 25, 36]
-fig3, axes3 = plt.subplots(2, 3, figsize=(14, 7))
-
-for idx, nb in enumerate(n_bar_values):
-    print(f"Entropy for <n> = {nb}...")
+fig7, axes7 = plt.subplots(2, 3, figsize=(FULL_W, 3.5), sharey=True)
+print("Entropy minimum near t_r/2 for a coherent field:")
+for ax, letter, nb in zip(axes7.flat, 'abcdef', n_bar_values):
     N_loc = int(3 * nb + 20)
     t_rev_loc = 2 * np.pi * np.sqrt(nb) / g
-    tl = np.linspace(0, 1.5 * t_rev_loc, 800)
-    a_loc, sz_loc, H_loc = jc_ops(N_loc)
+    # sample the entropy oscillation (period pi / (2 g sqrt(n+1))) at >= 25 points
+    tl = np.linspace(0, 1.5 * t_rev_loc, int(1.5 * t_rev_loc / 0.01) + 1)
+    _, _, H_loc = jc_ops(N_loc)
     psi0_loc = tensor(coherent(N_loc, np.sqrt(nb)), basis(2, 0))
-    res = mesolve(H_loc, psi0_loc, tl, [], [], options={'store_states': True})
-    S_loc = np.array([entropy_vn(ptrace(st, 1), 2) for st in res.states])
+    res = mesolve(H_loc, psi0_loc, tl, options={'store_states': True})
+    S_loc = np.array([entropy_vn(st.ptrace(1), 2) for st in res.states])
+    win = (tl > 0.3 * t_rev_loc) & (tl < 0.7 * t_rev_loc)
+    k = int(np.argmin(np.where(win, S_loc, np.inf)))
+    print(f"  n_bar = {nb:2d}: S_min = {S_loc[k]:.3f} at t = {tl[k] / t_rev_loc:.3f} t_r, "
+          f"S(t_r/2) = {S_loc[int(np.argmin(np.abs(tl - 0.5 * t_rev_loc)))]:.3f}")
 
-    ax = axes3.flat[idx]
-    ax.plot(tl * g, S_loc, 'r-', lw=0.8)
-    ax.axvline(0.5 * t_rev_loc * g, color='crimson', lw=0.7, ls=':', alpha=0.7)
-    ax.axvline(t_rev_loc * g, color='purple', lw=0.7, ls='--', alpha=0.5)
-    ax.set_title(rf'$\bar{{n}} = {nb}$', fontsize=11)
-    ax.set_ylim(-0.05, 1.15)
-    ax.axhline(1.0, color='gray', lw=0.5, ls=':')
-    if idx >= 3:
-        ax.set_xlabel(r'$gt$', fontsize=11)
-    if idx % 3 == 0:
-        ax.set_ylabel(r'$S$ [bits]', fontsize=11)
-
-fig3.suptitle('Entanglement entropy vs. mean photon number '
-              r'(dotted: $t_r/2$, dashed: $t_r$)', fontsize=13, y=1.01)
-fig3.tight_layout()
-fig3.savefig(PAPER_FIG / 'fig_entropy_nbar_scaling.png', dpi=200, bbox_inches='tight')
-fig3.savefig(PAPER_FIG / 'fig_entropy_nbar_scaling.pdf', bbox_inches='tight')
-print("Saved: fig_entropy_nbar_scaling")
+    ax.plot(tl * g, S_loc, color=COLORS['red'], lw=0.6)
+    ax.axhline(1.0, color='0.6', lw=0.4)
+    time_guides(ax, t_rev_loc * g)
+    ax.set_xlim(0, tl[-1] * g)
+    ax.set_ylim(-0.05, 1.1)
+    ax.set_yticks([0, 0.5, 1])
+    ax.xaxis.set_major_locator(plt.MaxNLocator(5, integer=True))
+    panel_label(ax, letter, rf'$\bar{{n}} = {nb}$')
+for ax in axes7.flat:               # every panel has its own time range
+    ax.set_xlabel(r'$gt$')
+for ax in axes7[:, 0]:
+    ax.set_ylabel(r'$S(\rho_{\rm atom})$ (bit)')
+save(fig7, PAPER_FIG / 'fig_entropy_nbar_scaling')
 
 
 # ---------------------------------------------------------------------------
-# Fig 8: dissipative dynamics, Lindblad with cavity loss kappa
+# Fig 8: cavity loss kappa (Lindblad): inversion, reduced entropy, negativity
 # ---------------------------------------------------------------------------
 kappa_values = [0.0, 0.01, 0.05, 0.1, 0.2]
-tlist_diss = np.linspace(0, 1.5 * t_revival, 1500)
-fig4, (ax4a, ax4b, ax4c) = plt.subplots(3, 1, figsize=(11, 10), sharex=True)
-ih = np.argmin(np.abs(tlist_diss - 0.5 * t_revival))
+styles = ['-', (0, (6, 1.5)), (0, (3, 1.5)), '-.', ':']      # also distinguishable in greyscale
+colors8 = ['k'] + sequential_colors(len(kappa_values) - 1, 'plasma', 0.12, 0.85)
+tlist_diss = np.linspace(0, 30.0, 1801)        # to gt = 30, the time quoted in the text
+ih = int(np.argmin(np.abs(tlist_diss - 0.5 * t_revival)))
+fig8, (ax8a, ax8b, ax8c) = plt.subplots(3, 1, figsize=(FULL_W, 5.6), sharex=True)
 
-for kap in kappa_values:
-    print(f"Dissipative JC: kappa/g = {kap:.2f}")
-    d = run_jc('Coherent', N_CAV['Coherent'], tlist_diss, kappa=kap)
-    lbl = rf'$\kappa/g = {kap:.2f}$'
-    ax4a.plot(tlist_diss * g, d['inversion'], lw=0.7, alpha=0.85, label=lbl)
-    ax4b.plot(tlist_diss * g, d['entropy'], lw=1.0, alpha=0.9, label=lbl)
-    ax4c.plot(tlist_diss * g, d['logneg'], lw=1.0, alpha=0.9, label=lbl)
-    print(f"   S(t_r/2) = {d['entropy'][ih]:.3f}, E_N(t_r/2) = {d['logneg'][ih]:.3f}, "
-          f"E_N(t_end) = {d['logneg'][-1]:.3f}, S(t_end) = {d['entropy'][-1]:.3f}")
+for kap, color, ls in zip(kappa_values, colors8, styles):
+    d = run_jc('coherent', STATES['coherent'][1], tlist_diss, kappa=kap)
+    lbl = '$0$' if kap == 0 else rf'${kap:.2f}$'       # two decimals, as in the text and tables
+    ax8a.plot(tlist_diss * g, d['inversion'], lw=0.7, color=color, ls=ls, label=lbl)
+    ax8b.plot(tlist_diss * g, d['entropy'], lw=1.0, color=color, ls=ls)
+    ax8c.plot(tlist_diss * g, d['logneg'], lw=1.0, color=color, ls=ls)
+    print(f"kappa/g = {kap:.2f}: S(t_r/2) = {d['entropy'][ih]:.3f}, E_N(t_r/2) = {d['logneg'][ih]:.3f}, "
+          f"S(t_end) = {d['entropy'][-1]:.3f}, E_N(t_end) = {d['logneg'][-1]:.3f}, "
+          f"<sz>(t_end) = {d['inversion'][-1]:+.3f}")
 
-ax4a.set_ylabel(r'$\langle \sigma_z \rangle$', fontsize=13)
-ax4a.set_title(rf'Effect of cavity decay ($\bar{{n}} = {n_bar:.0f}$)', fontsize=13)
-ax4a.set_ylim(-1.1, 1.1)
-ax4a.axhline(0, color='gray', lw=0.5, ls='--')
-mark_times(ax4a, labels=True)
-ax4a.legend(fontsize=9, ncol=4, loc='upper right', framealpha=0.95)
-
-ax4b.set_ylabel(r'$S(\rho_{\rm atom})$ [bits]', fontsize=13)
-ax4b.set_ylim(-0.05, 1.15)
-ax4b.axhline(1.0, color='gray', lw=0.5, ls=':')
-ax4b.legend(fontsize=9, ncol=3, loc='lower right', framealpha=0.95)
-ax4b.text(0.01, 0.03, r'for $\kappa > 0$ the global state is mixed: $S(\rho_{\rm atom})$ = total correlations',
-          transform=ax4b.transAxes, fontsize=7, color='gray')
-mark_times(ax4b)
-
-ax4c.set_ylabel(r'$E_{\mathcal{N}}$ (log-negativity)', fontsize=12)
-ax4c.set_xlabel(r'$gt$', fontsize=13)
-ax4c.set_ylim(-0.05, 1.15)
-ax4c.axhline(1.0, color='gray', lw=0.5, ls=':')
-ax4c.legend(fontsize=9, ncol=3, loc='upper right', framealpha=0.95)
-ax4c.text(0.01, 0.03, r'$E_{\mathcal{N}} = \log_2\|\rho^{T_{\rm atom}}\|_1$: entanglement monotone valid for mixed states',
-          transform=ax4c.transAxes, fontsize=7, color='gray')
-mark_times(ax4c)
-
-fig4.tight_layout()
-fig4.savefig(PAPER_FIG / 'fig_dissipative_entanglement.png', dpi=200, bbox_inches='tight')
-fig4.savefig(PAPER_FIG / 'fig_dissipative_entanglement.pdf', bbox_inches='tight')
-print("Saved: fig_dissipative_entanglement")
+ax8a.set_ylabel(r'$\langle \sigma_z \rangle$')
+ax8a.set_ylim(-1.1, 1.1)
+ax8a.set_yticks([-1, 0, 1])
+ax8a.axhline(0, color='0.6', lw=0.4)
+handles, labels8 = ax8a.get_legend_handles_labels()
+ax8b.legend(handles, labels8, title=r'$\kappa/g$', ncol=5, loc='lower right', columnspacing=1.2,
+            handlelength=1.6, borderaxespad=0.4)
+ax8b.set_ylabel(r'$S(\rho_{\rm atom})$ (bit)')
+ax8c.set_ylabel(r'$E_{\mathcal{N}}$')
+ax8c.set_xlabel(r'$gt$')
+for ax, letter in zip((ax8a, ax8b, ax8c), 'abc'):
+    time_guides(ax, t_revival * g, labels=(letter == 'a'))
+    panel_label(ax, letter)
+    ax.set_xlim(0, tlist_diss[-1] * g)
+for ax in (ax8b, ax8c):
+    ax.set_ylim(-0.05, 1.1)
+    ax.set_yticks([0, 0.5, 1])
+    ax.axhline(1.0, color='0.6', lw=0.4)
+save(fig8, PAPER_FIG / 'fig_dissipative_entanglement')

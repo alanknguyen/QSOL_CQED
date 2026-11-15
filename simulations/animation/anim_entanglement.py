@@ -1,149 +1,89 @@
 # anim_entanglement.py
-# Animated entropy S(rho_atom) + Wigner W(x,p) side by side.
-# Shows entropy rising during collapse (cat forms) and dipping at revival.
+# Animated Wigner function, inversion, entanglement entropy and field purity.
+# The entropy RISES during the collapse (the reduced field is then a two-branch
+# mixture, purity ~ 0.5) and reaches its MINIMUM at t_r/2, where the atom and
+# field disentangle and the field is a nearly pure cat (purity 0.96).  Toward
+# the revival t_r the entropy grows again.
 #
 # Nguyen Khoi Nguyen (Alan)
 # Dept. of Electrical and Computer Engineering, Boston University
-# Advised by Prof. Luca Dal Negro, EC 585
+# Began as a course project in EC 585 and EC 777, taught by Prof. Luca Dal Negro
 #
-# Generates: anim_entanglement.gif
+# Generates: animations/anim_entanglement.gif
 
+import sys
+from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
-import imageio
-import os
-from qutip import (
-    basis, tensor, destroy, sigmaz, sigmam, sigmap,
-    mesolve, wigner, ptrace, entropy_vn, coherent, Qobj, ket2dm
-)
+from qutip import (basis, tensor, destroy, sigmaz, sigmam, qeye, mesolve, wigner,
+                   entropy_vn, coherent)
 
-# -- Repo-relative output locations (run from any working directory) --
-from pathlib import Path as _Path
-import tempfile as _tempfile
-_ROOT = _Path(__file__).resolve().parents[2]
-FIG_DIR = _ROOT / 'figures'
-ANIM_DIR = _ROOT / 'animations'
-FIG_DIR.mkdir(exist_ok=True); ANIM_DIR.mkdir(exist_ok=True)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from plotstyle import (use_style, wigner_image, time_guides, fig_to_frame, save_gif,
+                       COLORS, ANIM_DIR)
 
-# -- Parameters --
+use_style()
+
 N_cav = 35
 g = 1.0
-alpha = np.sqrt(10.0)
-n_bar = np.abs(alpha)**2
+n_bar = 10.0
 t_revival = 2 * np.pi * np.sqrt(n_bar) / g
+t_max = 1.2 * t_revival
 
-# -- Operators --
-a  = tensor(destroy(N_cav), Qobj(np.eye(2)))
-sm = tensor(Qobj(np.eye(N_cav)), sigmam())
-sp = tensor(Qobj(np.eye(N_cav)), sigmap())
-sz = tensor(Qobj(np.eye(N_cav)), sigmaz())
+a = tensor(destroy(N_cav), qeye(2))
+sm = tensor(qeye(N_cav), sigmam())
+sz = tensor(qeye(N_cav), sigmaz())
+H_JC = g * (a.dag() * sm + a * sm.dag())
+psi0 = tensor(coherent(N_cav, np.sqrt(n_bar)), basis(2, 0))
 
-H_JC = g * (a.dag() * sm + a * sp)
-psi0 = tensor(coherent(N_cav, alpha), basis(2, 0))
-
-# -- Solve --
-n_frames = 120
-tlist = np.linspace(0, 1.2 * t_revival, n_frames)
-
-print(f"Solving JC dynamics: {n_frames} frames")
-result = mesolve(H_JC, psi0, tlist, [], [sz], options={'store_states': True})
+n_frames = 121                   # frame spacing t_r/100: t_r/2 and t_r are frames 50 and 100 exactly
+STRIDE = 20                      # fine time grid for the curves; every STRIDE-th point is a frame
+tlist = np.linspace(0, t_max, (n_frames - 1) * STRIDE + 1)
+print(f"Solving JC dynamics on {len(tlist)} time points, {n_frames} frames")
+result = mesolve(H_JC, psi0, tlist, e_ops=[sz], options={'store_states': True})
 inversion = np.array(result.expect[0])
+entropy = np.array([entropy_vn(st.ptrace(1), 2) for st in result.states])
+purity = np.array([(st.ptrace(0) ** 2).tr().real for st in result.states])
 
-# Precompute entropy and purity
-entropy = np.zeros(n_frames)
-purity = np.zeros(n_frames)
-for i in range(n_frames):
-    rho_at = ptrace(result.states[i], 1)
-    entropy[i] = entropy_vn(rho_at, 2)
-    rho_f = ptrace(result.states[i], 0)
-    purity[i] = (rho_f * rho_f).tr().real
+xvec = np.linspace(-7, 7, 161)
+frames, durations = [], []
+for k in range(n_frames):
+    i = k * STRIDE
+    W = wigner(result.states[i].ptrace(0), xvec, xvec)
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(9.2, 3.1),
+                                        gridspec_kw={'width_ratios': [1.05, 1, 1]})
+    im = wigner_image(ax1, W, xvec)
+    ax1.set_xlabel(r'$x$'); ax1.set_ylabel(r'$p$')
+    ax1.set_xticks([-5, 0, 5]); ax1.set_yticks([-5, 0, 5])
+    fig.colorbar(im, ax=ax1, shrink=0.85, aspect=22, pad=0.03, ticks=[-0.3, 0, 0.3])
+    ax1.set_title(rf'$W(x,p)$, $t/t_r = {tlist[i] / t_revival:.2f}$', fontsize=9)
 
-# -- Render frames --
-xvec = np.linspace(-7, 7, 150)
-frame_dir = _tempfile.mkdtemp(prefix='qsol_frames_')
-os.makedirs(frame_dir, exist_ok=True)
-global_wlim = 0.30
+    def trace(ax, y, color, ls='-'):
+        ax.plot(tlist * g, y, color='0.82', lw=0.5, ls=ls)
+        ax.plot(tlist[:i + 1] * g, y[:i + 1], color=color, lw=0.9, ls=ls)
+        ax.plot(tlist[i] * g, y[i], 'o', color=color, ms=4.5, mec='k', mew=0.5, zorder=5)
 
-print("Rendering frames...")
-for i in range(n_frames):
-    rho_field = ptrace(result.states[i], 0)
-    W = wigner(rho_field, xvec, xvec)
+    trace(ax2, inversion, COLORS['blue'])
+    ax2.axhline(0, color='0.6', lw=0.4)
+    ax2.set_ylim(-1.1, 1.1); ax2.set_ylabel(r'$\langle \sigma_z \rangle$')
+    trace(ax3, entropy, COLORS['red'])
+    trace(ax3, purity, COLORS['green'], ls=(0, (4, 2)))
+    ax3.plot([], [], color=COLORS['red'], lw=0.9, label=rf'$S = {entropy[i]:.2f}$ bit')
+    ax3.plot([], [], color=COLORS['green'], lw=0.9, ls=(0, (4, 2)), label=rf'$\mathcal{{P}} = {purity[i]:.2f}$')
+    ax3.legend(loc='lower right', fontsize=7.5, frameon=True, framealpha=0.9, edgecolor='none')
+    ax3.set_ylim(-0.03, 1.08)
+    ax3.set_ylabel(r'entropy $S$, field purity $\mathcal{P}$')
+    for ax in (ax2, ax3):
+        time_guides(ax, t_revival * g, labels=True)
+        ax.set_xlim(0, t_max * g); ax.set_xlabel(r'$gt$')
+    frames.append(fig_to_frame(fig, dpi=105))
+    durations.append(80)
+    if (k + 1) % 30 == 0:
+        print(f"  {k + 1}/{n_frames} frames")
 
-    fig = plt.figure(figsize=(16, 5))
-    gs = fig.add_gridspec(1, 3, width_ratios=[1.2, 1, 1], wspace=0.35)
-
-    # Left: Wigner
-    ax1 = fig.add_subplot(gs[0])
-    im = ax1.contourf(xvec, xvec, W, levels=80, cmap='RdBu_r',
-                       vmin=-global_wlim, vmax=global_wlim, extend='both')
-    ax1.set_xlabel(r'$x$', fontsize=12)
-    ax1.set_ylabel(r'$p$', fontsize=12)
-    ax1.set_aspect('equal')
-    ax1.set_title(r'$W(x,p)$ of cavity field', fontsize=11)
-    fig.colorbar(im, ax=ax1, fraction=0.046, pad=0.04)
-
-    # Middle: inversion + entropy
-    ax2 = fig.add_subplot(gs[1])
-    ax2.plot(tlist * g, inversion, color='#2166ac', linewidth=0.6, alpha=0.3)
-    ax2.plot(tlist[:i+1] * g, inversion[:i+1], color='#2166ac', linewidth=1.2)
-    ax2.plot(tlist[i] * g, inversion[i], 'o', color='#2166ac', markersize=8, zorder=5)
-    ax2.set_ylabel(r'$\langle \sigma_z \rangle$', fontsize=12, color='#2166ac')
-    ax2.set_xlabel(r'$gt$', fontsize=12)
-    ax2.set_ylim(-1.1, 1.1)
-    ax2.set_xlim(0, 1.2 * t_revival * g)
-    ax2.set_title('Inversion', fontsize=11)
-    ax2.axhline(0, color='gray', linewidth=0.5, linestyle='--')
-
-    # Right: entropy + purity
-    ax3 = fig.add_subplot(gs[2])
-    ax3.plot(tlist * g, entropy, 'r-', linewidth=0.6, alpha=0.3)
-    ax3.plot(tlist[:i+1] * g, entropy[:i+1], 'r-', linewidth=1.5)
-    ax3.plot(tlist[i] * g, entropy[i], 'ro', markersize=8, zorder=5)
-    ax3.set_ylabel(r'$S(\rho_{\rm atom})$ [bits]', fontsize=12, color='red')
-    ax3.set_xlabel(r'$gt$', fontsize=12)
-    ax3.set_ylim(-0.05, 1.15)
-    ax3.set_xlim(0, 1.2 * t_revival * g)
-    ax3.axhline(1.0, color='gray', linewidth=0.5, linestyle=':')
-    ax3.set_title('Entanglement entropy', fontsize=11)
-
-    # Purity on twin axis
-    ax3b = ax3.twinx()
-    ax3b.plot(tlist * g, purity, color='#1b7837', linewidth=0.6, alpha=0.3)
-    ax3b.plot(tlist[:i+1] * g, purity[:i+1], color='#1b7837', linewidth=1.2)
-    ax3b.plot(tlist[i] * g, purity[i], 'o', color='#1b7837', markersize=6, zorder=5)
-    ax3b.set_ylabel(r'$\mathrm{Tr}(\rho_f^2)$', fontsize=11, color='#1b7837')
-    ax3b.set_ylim(-0.05, 1.1)
-
-    t_ratio = tlist[i] / t_revival
-    fig.suptitle(
-        rf'Jaynes-Cummings: $\bar{{n}} = {n_bar:.0f}$,  $t/t_r = {t_ratio:.2f}$,  '
-        rf'$S = {entropy[i]:.2f}$ bits', fontsize=13, y=0.98
-    )
-
-    fig.savefig(f'{frame_dir}/frame_{i:04d}.png', dpi=90, bbox_inches='tight',
-                facecolor='white')
-    plt.close(fig)
-
-    if (i + 1) % 20 == 0:
-        print(f"  {i+1}/{n_frames} frames done")
-
-# -- Stitch GIF --
-print("Assembling GIF...")
-frames = []
-for i in range(n_frames):
-    frames.append(imageio.imread(f'{frame_dir}/frame_{i:04d}.png'))
-
-cat_idx = np.argmin(np.abs(tlist - 0.5 * t_revival))
-rev_idx = np.argmin(np.abs(tlist - t_revival))
-
-durations = [0.08] * n_frames
-durations[0] = 1.0
-durations[cat_idx] = 1.5
-durations[rev_idx] = 1.0
-
-imageio.mimsave(f'{ANIM_DIR}/anim_entanglement.gif', frames,
-                duration=durations, loop=0)
-print("Saved: anim_entanglement.gif")
-
-import shutil
-shutil.rmtree(frame_dir)
+frame_t = tlist[::STRIDE]
+durations[0] = 1000
+assert abs(frame_t[50] - 0.5 * t_revival) < 1e-9 and abs(frame_t[100] - t_revival) < 1e-9
+durations[int(np.argmin(np.abs(frame_t - 0.5 * t_revival)))] = 1800
+durations[int(np.argmin(np.abs(frame_t - t_revival)))] = 1200
+save_gif(frames, ANIM_DIR / 'anim_entanglement.gif', durations)

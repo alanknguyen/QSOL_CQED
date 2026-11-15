@@ -4,7 +4,7 @@ two sentences; experiment section reduced to the parameter mapping; intro and
 conclusions trimmed.  Abstract, methods, results, teaching section unchanged."""
 import re, pathlib
 
-SRC = pathlib.Path('/Users/alanknguyen/Documents/qsol_cqed/paper/ejp/qsol_cqed_ejp.tex')
+SRC = pathlib.Path(__file__).resolve().parents[1] / 'qsol_cqed_ejp.tex'
 OUT = SRC.with_name('qsol_cqed_ejp_paper.tex')
 s = SRC.read_text()
 
@@ -22,6 +22,10 @@ def rep(old, new):
 rep("% European Journal of Physics (IOP Publishing) version of qsol_cqed.tex,",
     "% European Journal of Physics 'Paper' (~4000 words) version of qsol_cqed.tex,")
 
+# ---------------------------------------------------------------- abstract: the short version summarizes the theory rather than deriving it
+rep("Starting from the dipole Hamiltonian we derive the JC model, its dressed states, and the collapse and revival times",
+    "After summarizing the JC model, its dressed states, and the collapse and revival times")
+
 # ---------------------------------------------------------------- introduction
 INTRO1 = r"""The Jaynes--Cummings (JC) model~\cite{jaynes1963}, a single two-level atom coupled to a single quantized cavity mode, is the simplest fully quantum description of light--matter interaction and the standard first encounter with it in a quantum-optics course. It predicts phenomena with no classical analog: vacuum Rabi splitting, the collapse and revival of Rabi oscillations~\cite{eberly1980}, and the dynamical generation of Schr\"{o}dinger cat states in the cavity field~\cite{brune1996}, all confirmed in microwave cavity QED~\cite{rempe1987, haroche2006} and in circuit QED with superconducting qubits~\cite{blais2021}.
 
@@ -29,9 +33,7 @@ INTRO1 = r"""The Jaynes--Cummings (JC) model~\cite{jaynes1963}, a single two-lev
 replace_span('Coherent manipulation of quantum two-level systems', 'While the JC model appears in every', INTRO1)
 rep(r"""Section~\ref{sec:theory} supplies a self-contained derivation of the rest, and readers who know the JC model can proceed directly to Section~\ref{sec:methods}.""",
     r"""Section~\ref{sec:theory} collects the results we need and points to full derivations.""")
-replace_span('The paper is organized as follows.', '\n\\section{Theoretical Framework}',
-    r"""Section~\ref{sec:theory} summarizes the theory, Section~\ref{sec:methods} the computational methods, and Section~\ref{sec:results} the results; Section~\ref{sec:experiment} maps them onto experimental platforms, Section~\ref{sec:teaching} suggests classroom use, and Section~\ref{sec:conclusions} concludes.
-""")
+replace_span('The paper is organized as follows.', '\n\\section{Theoretical Framework}', '')
 
 # ---------------------------------------------------------------- theory (condensed)
 THEORY = r"""\section{Theoretical Framework}
@@ -102,6 +104,21 @@ an entanglement monotone that vanishes for separable states and equals 1 for a m
 """
 replace_span('\\section{Theoretical Framework}', '\\section{Computational Methods}', THEORY)
 
+# ---------------------------------------------------------------- tighten methods and results for the ~4000-word limit
+rep(r"""We work in dimensionless units with $g = 1$. The characteristic timescales are the collapse time $t_c \equiv 1/g$ and the revival time $t_r = 2\pi\sqrt{\bar{n}}/g$. Table~\ref{tab:params} summarizes the simulation parameters.""",
+    r"""We set $g = 1$; Table~\ref{tab:params} lists the parameters of each run.""")
+rep(r"""All simulation code is available as Python scripts at \url{https://github.com/alanknguyen/QSOL_CQED}, and the release used for this article is archived on Zenodo~\cite{nguyen2026code}.
+
+""", "")
+rep(r"""The central computational result of this section is shown in Fig.~\ref{fig:wigner_evolution}, which displays the Wigner function of the reduced cavity field at six characteristic times.""",
+    r"""Figure~\ref{fig:wigner_evolution} shows the Wigner function of the reduced cavity field at six times.""")
+rep(r""" These fringes are the phase-space manifestation of quantum interference between macroscopically distinguishable field states and serve as a definitive marker of non-classicality.""", "")
+rep(r"""Figure~\ref{fig:entanglement_comparison} shows the inversion, entropy, and negativity for all four cases. The principal observations are as follows.""",
+    r"""Figure~\ref{fig:entanglement_comparison} shows the inversion, entropy, and negativity for all four cases.""")
+rep(r"""These results demonstrate the challenge of maintaining quantum coherence. By the operational criterion""", r"""By the operational criterion""")
+rep(r""" Trace normalization alone is not used as a convergence criterion.""", "")
+rep(r"""(a) collapse and revival as dephasing and rephasing of a discrete spectrum, using""", r"""(a) collapse and revival, using""")
+
 # ---------------------------------------------------------------- criteria section: fold into results, remove
 rep(r"""The revival is not exact: higher-order terms in the photon-number distribution prevent perfect recurrence.""",
     r"""The revival is not exact: higher-order terms in the photon-number distribution prevent perfect recurrence. Negative $W$ is the phase-space face of the non-classicality that photon counting detects as sub-Poissonian statistics or antibunching~\cite{kimble1977}; the Glauber--Sudarshan $P$ function remains the definitive criterion, and the everywhere-positive Husimi $Q$ function is correspondingly less sensitive.""")
@@ -137,6 +154,21 @@ dropped = []
 for key in re.findall(r'\\bibitem\{([^}]*)\}', s):
     if key not in cites:
         s = re.sub(r'\\bibitem\{' + re.escape(key) + r'\}[^\n]*\n', '', s); dropped.append(key)
+
+# ---------------------------------------------------------------- number references in order of first citation
+def _sort_bibliography(text):
+    pre, rest = text.split('\\begin{thebibliography}{99}\n', 1)
+    bib, post = rest.split('\\end{thebibliography}', 1)
+    items = dict((re.match(r'\\bibitem\{([^}]*)\}', ln).group(1), ln) for ln in bib.strip().split('\n'))
+    seen = []
+    for m in re.finditer(r'\\cite\{([^}]*)\}', pre):
+        for k in (x.strip() for x in m.group(1).split(',')):
+            if k not in seen:
+                seen.append(k)
+    assert set(seen) == set(items), (set(items) ^ set(seen))
+    return pre + '\\begin{thebibliography}{99}\n' + '\n'.join(items[k] for k in seen) + '\n\\end{thebibliography}' + post
+
+s = _sort_bibliography(s)
 
 # ---------------------------------------------------------------- checks
 labels = set(re.findall(r'\\label\{([^}]*)\}', s)); refs = set(re.findall(r'\\ref\{([^}]*)\}', s))

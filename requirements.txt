@@ -2,5 +2,4 @@ qutip>=5.0
 numpy>=1.24
 scipy>=1.10
 matplotlib>=3.7
-imageio>=2.30
 pillow>=10.0

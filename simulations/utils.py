@@ -1,6 +1,6 @@
 # utils.py
 # Nguyen Khoi Nguyen (Alan), Boston University
-# Advised by Prof. Luca Dal Negro
+# Began as a course project taught by Prof. Luca Dal Negro
 
 import numpy as np
 from qutip import (
@@ -82,3 +82,57 @@ def wigner_negativity(W, xvec):
 def revival_time(n_bar, g=1.0):
     """t_r = 2 pi sqrt(n_bar) / g"""
     return 2.0 * np.pi * np.sqrt(n_bar) / g
+
+
+def squeezed_vacuum(N_cav, n_bar):
+    """Squeezed vacuum with <n> = sinh^2(r) = n_bar, built from its exact Fock
+    amplitudes  c_{2m} = (-tanh r)^m sqrt((2m)!) / (2^m m! sqrt(cosh r)).
+
+    This avoids exponentiating a truncated generator.  The photon-number tail is
+    heavy, p(2m) ~ (n_bar/(n_bar+1))^m / sqrt(pi m): for n_bar = 10 the weight
+    beyond n = 150 is 1.6e-4 and N_cav = 300 is needed to push it below 1e-6.
+    """
+    from scipy.special import gammaln
+    r = np.arcsinh(np.sqrt(n_bar))
+    m = np.arange(0, (N_cav + 1) // 2)
+    log_amp = (0.5 * gammaln(2 * m + 1) - m * np.log(2.0) - gammaln(m + 1)
+               + m * np.log(np.tanh(r)) - 0.5 * np.log(np.cosh(r)))
+    c = np.zeros(N_cav, dtype=complex)
+    c[2 * m] = (-1.0) ** m * np.exp(log_amp)
+    return Qobj(c.reshape(-1, 1)).unit()
+
+
+def cat_fidelity(rho_field, n_bar, return_params=False):
+    """Fidelity of a field state with the best-fitting two-component cat,
+
+        F = max_{beta, theta} <cat| rho |cat>,   |cat> ~ |beta> + e^{i theta} |-beta>,
+
+    with beta scanned around i sqrt(n_bar) (the half-revival cat of an initially
+    excited atom and real alpha sits on the p axis) and theta over [0, 2 pi).
+    With return_params=True also returns the optimal (beta, theta).
+    """
+    N = rho_field.shape[0]
+    thetas = np.linspace(0, 2 * np.pi, 721)
+    best = (0.0, None, None)
+    for scale in np.linspace(0.85, 1.10, 11):
+        for dphi in np.linspace(-0.2, 0.2, 9):
+            beta = scale * np.sqrt(n_bar) * np.exp(1j * (np.pi / 2 + dphi))
+            kp = coherent(N, beta, method='analytic').full().ravel()
+            km = coherent(N, -beta, method='analytic').full().ravel()
+            R = rho_field.full()
+            rpp = np.real(np.vdot(kp, R @ kp))
+            rmm = np.real(np.vdot(km, R @ km))
+            c = np.vdot(kp, R @ km)            # <beta| rho |-beta>
+            ov = np.vdot(kp, km)               # <beta|-beta> = exp(-2|beta|^2)
+            F = ((rpp + rmm + 2 * np.real(np.exp(1j * thetas) * c))
+                 / (2 + 2 * np.real(np.exp(1j * thetas) * ov)))
+            k = int(np.argmax(F))
+            if F[k] > best[0]:
+                best = (float(F[k]), beta, float(thetas[k]))
+    return best if return_params else best[0]
+
+
+def photon_parity(rho_field):
+    """<(-1)^n> of a field state."""
+    p = np.real(rho_field.diag())
+    return float(np.sum(p[0::2]) - np.sum(p[1::2]))

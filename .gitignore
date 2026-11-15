@@ -22,6 +22,11 @@ paper/*.toc
 paper/*.synctex.gz
 paper/*.fdb_latexmk
 paper/*.fls
+paper/*/*.aux
+paper/*/*.bbl
+paper/*/*.blg
+paper/*/*.log
+paper/*/*.out
 
 # OS
 .DS_Store

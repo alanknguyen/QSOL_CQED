@@ -1,241 +1,132 @@
 #!/usr/bin/env python3
 """
-Q-function vs Wigner function side-by-side during JC dynamics.
+Husimi Q function versus Wigner function of the cavity field during JC dynamics.
 
-The Husimi Q-function Q(α) = <α|ρ|α>/π is always non-negative (it's
-the Wigner function convolved with a Gaussian of width 1/2).
+In the convention a = (x + ip)/sqrt(2) used throughout,
+    Q(x, p) = <alpha| rho |alpha> / (2 pi),   alpha = (x + ip)/sqrt(2),
+is normalised to one in (x, p), is never negative, and equals the Wigner
+function smoothed by a vacuum-sized Gaussian.
 
-At t=0 both look identical (Gaussian).  At the cat-state time t = t_r/2,
-Q shows two blobs but NO interference fringes, while W shows the fringes
-with negative regions.  This visually demonstrates why Wigner negativity
-is a stronger non-classicality test, which is discussed in Section V
-but never shown in the paper.
+At t = 0 both are Gaussians.  At the cat-state time t = t_r/2 Q shows the two
+components but NO interference fringes, while W shows fringes with negative
+values: the smoothing in Q averages over a fringe period (0.70) that is
+smaller than the smoothing width, so the coherence between the components is
+invisible in Q.  Wigner negativity is the more sensitive witness.
+
+Generates: figures/fig_q_vs_wigner (.png, .pdf), animations/anim_q_vs_wigner.gif
 
 Author: Nguyen Khoi Nguyen (Alan), Boston University
 """
 
+import sys
+from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
 import qutip as qt
-from PIL import Image
-import io
 
-# -- Repo-relative output locations (run from any working directory) --
-from pathlib import Path as _Path
-import tempfile as _tempfile
-_ROOT = _Path(__file__).resolve().parents[2]
-FIG_DIR = _ROOT / 'figures'
-ANIM_DIR = _ROOT / 'animations'
-FIG_DIR.mkdir(exist_ok=True); ANIM_DIR.mkdir(exist_ok=True)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from plotstyle import (use_style, save, panel_label, wigner_image, fig_to_frame, save_gif,
+                       FULL_W, W_MAX, COLORS, FIG_DIR, ANIM_DIR, PAPER_FIG, SUPP_DIR)
+from utils import wigner_negativity
 
-# ── Parameters ──────────────────────────────────────────────────────
+use_style()
+
 g = 1.0
 n_bar = 10
-alpha = np.sqrt(n_bar)
 N_cav = 40
 t_r = 2 * np.pi * np.sqrt(n_bar) / g
-t_c = 1.0 / g      # operational collapse time (paper Sec. III); t_c = O(1/g)
+t_c = 1.0 / g
 t_max = 1.3 * t_r
-N_time = 600
-tlist = np.linspace(0, t_max, N_time)
+Q_MAX = 1.0 / (2 * np.pi)          # peak of Q for a coherent state
 
-# Phase space grid
-N_grid = 150  # for Wigner
-xvec = np.linspace(-7, 7, N_grid)
-N_grid_q = 150  # for Q
-xvec_q = np.linspace(-7, 7, N_grid_q)
-
-# ── JC Hamiltonian ──────────────────────────────────────────────────
-a  = qt.tensor(qt.destroy(N_cav), qt.qeye(2))
+a = qt.tensor(qt.destroy(N_cav), qt.qeye(2))
 sm = qt.tensor(qt.qeye(N_cav), qt.sigmam())
-sp = qt.tensor(qt.qeye(N_cav), qt.sigmap())
-sz = qt.tensor(qt.qeye(N_cav), qt.sigmaz())
+H_JC = g * (a.dag() * sm + a * sm.dag())
+psi0 = qt.tensor(qt.coherent(N_cav, np.sqrt(n_bar)), qt.basis(2, 0))
 
-H_JC = g * (a.dag() * sm + a * sp)
-psi0 = qt.tensor(qt.coherent(N_cav, alpha), qt.basis(2, 0))
-
-# ── Solve ───────────────────────────────────────────────────────────
-print("Running JC dynamics...")
-result = qt.mesolve(H_JC, psi0, tlist, e_ops=[])
-sigma_z = np.array([qt.expect(sz, result.states[i]) for i in range(N_time)])
-
-# ── Wigner negativity volume ────────────────────────────────────────
-def wigner_negativity(W, dx):
-    """δ = ∫|W| dx dp - 1"""
-    return np.sum(np.abs(W)) * dx * dx - 1.0
-
-# ── Static figure: 6 snapshots side-by-side ─────────────────────────
-snapshot_times = [0, t_c * 0.5, t_c * 2, t_r / 2, t_r * 0.75, t_r]
-snapshot_labels = [
-    r'$t = 0$', r'$t = 0.5\,t_c$', r'$t = 2\,t_c$',
-    r'$t = t_r/2$ (cat)', r'$t = 0.75\,t_r$', r'$t = t_r$ (revival)'
-]
-
-fig, axes = plt.subplots(2, 6, figsize=(20, 7))
-fig.suptitle(
-    r'Wigner $W(x,p)$ vs Husimi $Q(x,p)$ — Jaynes–Cummings'
-    + f' ($\\bar{{n}} = {n_bar}$)',
-    fontsize=14, fontweight='bold'
-)
-
-for col, (t_snap, label) in enumerate(zip(snapshot_times, snapshot_labels)):
-    idx = np.argmin(np.abs(tlist - t_snap))
-    rho_field = result.states[idx].ptrace(0)
-
-    # Wigner
-    W = qt.wigner(rho_field, xvec, xvec)
-    dx = xvec[1] - xvec[0]
-    delta = wigner_negativity(W, dx)
-
-    # Q function
-    Q = qt.qfunc(rho_field, xvec_q, xvec_q)
-
-    # Top row: Wigner
-    ax_w = axes[0, col]
-    wlim = max(abs(W.min()), abs(W.max()))
-    ax_w.contourf(xvec, xvec, W, levels=np.linspace(-wlim, wlim, 61), cmap='RdBu_r')
-    ax_w.set_aspect('equal')
-    ax_w.set_title(label, fontsize=9)
-    if col == 0:
-        ax_w.set_ylabel(r'Wigner $W(x,p)$' + '\n' + r'$p$', fontsize=10)
-    ax_w.text(0.02, 0.98, f'$\\delta = {delta:.3f}$', transform=ax_w.transAxes,
-              fontsize=7, va='top', color='black',
-              bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.7))
-    ax_w.tick_params(labelsize=6)
-
-    # Bottom row: Q
-    ax_q = axes[1, col]
-    # pcolormesh with vmin=0: contourf leaves sub-level (round-off negative) cells
-    # unfilled, which produced a white blob in the t=0 Husimi panel.
-    ax_q.pcolormesh(xvec_q, xvec_q, np.clip(Q, 0, None), cmap='inferno', vmin=0, shading='auto')
-    ax_q.set_aspect('equal')
-    if col == 0:
-        ax_q.set_ylabel(r'Husimi $Q(\alpha)$' + '\n' + r'$p$', fontsize=10)
-    ax_q.set_xlabel(r'$x$', fontsize=9)
-    ax_q.text(0.02, 0.98, r'$Q \geq 0$ always', transform=ax_q.transAxes,
-              fontsize=7, va='top', color='white',
-              bbox=dict(boxstyle='round,pad=0.2', facecolor='black', alpha=0.5))
-    ax_q.tick_params(labelsize=6)
-
-plt.tight_layout(rect=[0, 0, 1, 0.93])
-fig.savefig(f'{FIG_DIR}/fig_q_vs_wigner.png', dpi=200,
-            bbox_inches='tight')
-fig.savefig(f'{FIG_DIR}/fig_q_vs_wigner.pdf', bbox_inches='tight')
-print("Static figure saved.")
-plt.close()
-
-# ── GIF animation ───────────────────────────────────────────────────
-N_frames = 80
+snapshots = [('a', 'e', 0.0, r'$t = 0$'), ('b', 'f', 2 * t_c, r'$t = 2\,t_c$'),
+             ('c', 'g', 0.5 * t_r, r'$t = t_r/2$'), ('d', 'h', t_r, r'$t = t_r$')]
+N_frames = 92                        # spacing t_r/70: t_r/2 and t_r are frames 35 and 70 exactly
 frame_times = np.linspace(0, t_max, N_frames)
-frame_indices = [np.argmin(np.abs(tlist - ft)) for ft in frame_times]
+assert abs(frame_times[35] - t_r / 2) < 1e-9 and abs(frame_times[70] - t_r) < 1e-9
+tlist = np.array(sorted(set(frame_times) | {s[2] for s in snapshots}))
+print("Solving JC dynamics ...")
+states = qt.mesolve(H_JC, psi0, tlist).states
+field_at = lambda t: states[int(np.argmin(np.abs(tlist - t)))].ptrace(0)
 
-# Use smaller grid for animation speed
-N_anim = 100
-xvec_a = np.linspace(-7, 7, N_anim)
-dx_a = xvec_a[1] - xvec_a[0]
 
-print("Generating Q vs Wigner animation...")
-frames = []
+def q_image(ax, Q, xvec):
+    dx = xvec[1] - xvec[0]
+    ext = [xvec[0] - dx / 2, xvec[-1] + dx / 2] * 2
+    im = ax.imshow(np.clip(Q, 0, None), origin='lower', extent=ext, cmap='magma', vmin=0,
+                   vmax=Q_MAX, interpolation='bilinear', rasterized=True)
+    ax.set_aspect('equal')
+    return im
 
-for fi, idx in enumerate(frame_indices):
-    t_now = tlist[idx]
-    rho_field = result.states[idx].ptrace(0)
 
-    W = qt.wigner(rho_field, xvec_a, xvec_a)
-    Q = qt.qfunc(rho_field, xvec_a, xvec_a)
-    delta = wigner_negativity(W, dx_a)
+# ---------------------------------------------------------------------------
+# Static figure: W (top) and Q (bottom) at four times
+# ---------------------------------------------------------------------------
+xvec = np.linspace(-7, 7, 281)
+fig, axes = plt.subplots(2, 4, figsize=(FULL_W, 3.3), sharex=True, sharey=True)
+for col, (lw_, lq_, t, label) in enumerate(snapshots):
+    rho = field_at(t)
+    W = qt.wigner(rho, xvec, xvec)
+    Q = qt.qfunc(rho, xvec, xvec)
+    dx = xvec[1] - xvec[0]
+    delta = wigner_negativity(W, xvec)
+    print(f"  {label:18s} delta = {delta:6.3f}, min W = {W.min():+.3f}, min Q = {Q.min():+.1e}, "
+          f"int Q = {Q.sum() * dx * dx:.4f}")
+    im_w = wigner_image(axes[0, col], W, xvec)
+    im_q = q_image(axes[1, col], Q, xvec)
+    panel_label(axes[0, col], lw_, label)
+    panel_label(axes[1, col], lq_)
+    axes[0, col].text(0.05, 0.05, rf'$\delta = {max(delta, 0):.2f}$', transform=axes[0, col].transAxes,
+                      fontsize=7.5, va='bottom')
+    axes[1, col].set_xlabel(r'$x$')
+    for ax in axes[:, col]:
+        ax.set_xticks([-5, 0, 5]); ax.set_yticks([-5, 0, 5])
+axes[0, 0].set_ylabel(r'$p$'); axes[1, 0].set_ylabel(r'$p$')
+cbw = fig.colorbar(im_w, ax=axes[0], shrink=0.9, aspect=16, pad=0.02, ticks=[-0.3, 0, 0.3])
+cbw.set_label(r'$W(x,p)$')
+cbq = fig.colorbar(im_q, ax=axes[1], shrink=0.9, aspect=16, pad=0.02, ticks=[0, 0.05, 0.1, 0.15])
+cbq.set_label(r'$Q(x,p)$')
+save(fig, FIG_DIR / 'fig_q_vs_wigner', copy_to=(PAPER_FIG, SUPP_DIR))
 
-    fig = plt.figure(figsize=(14, 5.5))
-    gs = gridspec.GridSpec(1, 3, width_ratios=[1, 1, 0.8], wspace=0.25)
 
-    # ─ Wigner function
-    ax1 = fig.add_subplot(gs[0])
-    wlim = max(abs(W.min()), abs(W.max()), 0.01)
-    ax1.contourf(xvec_a, xvec_a, W, levels=np.linspace(-wlim, wlim, 51), cmap='RdBu_r')
-    ax1.set_aspect('equal')
-    ax1.set_xlabel(r'$x$', fontsize=11)
-    ax1.set_ylabel(r'$p$', fontsize=11)
-    ax1.set_title(f'Wigner $W(x,p)$\n$\\delta = {delta:.3f}$',
-                  fontsize=11, fontweight='bold')
+# ---------------------------------------------------------------------------
+# Animation: W, Q and their cuts along p = 0
+# ---------------------------------------------------------------------------
+xa = np.linspace(-7, 7, 141)
+x_line = np.linspace(-7, 7, 701)
+frames, durations = [], []
+print("Rendering Q-vs-Wigner animation ...")
+for t_now in frame_times:
+    rho = field_at(t_now)
+    W = qt.wigner(rho, xa, xa)
+    Q = qt.qfunc(rho, xa, xa)
+    W_cut = qt.wigner(rho, x_line, np.array([0.0]))[0]
+    Q_cut = qt.qfunc(rho, x_line, np.array([0.0]))[0]
 
-    # Highlight negative regions
-    if delta > 0.01:
-        ax1.contour(xvec_a, xvec_a, W, levels=[0], colors='black',
-                    linewidths=0.5, linestyles='--')
-
-    # ─ Q function
-    ax2 = fig.add_subplot(gs[1])
-    ax2.pcolormesh(xvec_a, xvec_a, np.clip(Q, 0, None), cmap='inferno', vmin=0, shading='auto')
-    ax2.set_aspect('equal')
-    ax2.set_xlabel(r'$x$', fontsize=11)
-    ax2.set_ylabel(r'$p$', fontsize=11)
-    ax2.set_title(r'Husimi $Q(\alpha) \geq 0$' + '\n(no fringes)',
-                  fontsize=11, fontweight='bold')
-
-    # ─ Right panel: cross-sections + inversion
-    ax3 = fig.add_subplot(gs[2])
-    mid = N_anim // 2
-
-    # W and Q cross-sections at p = 0
-    ax3.plot(xvec_a, W[mid, :], 'b-', lw=1.5, label=r'$W(x, 0)$')
-    ax3.plot(xvec_a, Q[mid, :], 'r-', lw=1.5, alpha=0.7,
-             label=r'$Q(x, 0)$')
-    ax3.axhline(0, color='gray', ls=':', lw=0.5)
-    ax3.fill_between(xvec_a, W[mid, :], 0,
-                     where=(W[mid, :] < 0), color='blue', alpha=0.2)
-    ax3.set_xlabel(r'$x$', fontsize=10)
-    ax3.set_ylabel('Value', fontsize=10)
-    ax3.set_title('Cross-section at $p=0$', fontsize=10, fontweight='bold')
-    ax3.legend(fontsize=8)
-    ax3.set_ylim(-0.3, 0.4)
-    ax3.set_xlim(-7, 7)
-
-    # Phase annotation
-    if t_now < t_c:
-        phase = 'Rabi oscillations'
-    elif t_now < t_r * 0.35:
-        phase = 'Collapse'
-    elif abs(t_now - t_r/2) < 2.0:
-        phase = 'Cat state — fringes in W only!'
-    elif t_now < t_r * 0.85:
-        phase = 'Pre-revival'
-    elif abs(t_now - t_r) < 2.0:
-        phase = 'Revival'
-    else:
-        phase = 'Post-revival'
-
-    fig.suptitle(
-        f'$gt = {t_now:.1f}$ — {phase}\n'
-        + r'Wigner negativity is a stronger non-classicality witness than $Q \geq 0$',
-        fontsize=12, fontweight='bold', y=1.01
-    )
-
-    buf = io.BytesIO()
-    fig.savefig(buf, format='png', dpi=110, bbox_inches='tight')
-    buf.seek(0)
-    frames.append(Image.open(buf).copy())
-    buf.close()
-    plt.close(fig)
-
-    if (fi + 1) % 20 == 0:
-        print(f"  Frame {fi+1}/{N_frames}")
-
-# Durations
-durations = []
-for fi, idx in enumerate(frame_indices):
-    t_now = tlist[idx]
-    if abs(t_now - t_r/2) < t_max / N_frames * 1.5:
-        durations.append(350)
-    elif abs(t_now - t_r) < t_max / N_frames * 1.5:
-        durations.append(250)
-    elif t_now < 0.1:
-        durations.append(200)
-    else:
-        durations.append(80)
-
-gif_path = f'{ANIM_DIR}/anim_q_vs_wigner.gif'
-frames[0].save(gif_path, save_all=True, append_images=frames[1:],
-               duration=durations, loop=0)
-print(f"Animation saved: {gif_path}")
-print("Done.")
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(8.4, 3.0), gridspec_kw={'width_ratios': [1, 1, 1.1]})
+    wigner_image(ax1, W, xa)
+    delta_now = wigner_negativity(qt.wigner(rho, xvec, xvec), xvec)      # fine grid: the frame grid is too coarse for delta
+    ax1.set_title(rf'Wigner $W$, $\delta = {max(delta_now, 0):.2f}$', fontsize=9)
+    q_image(ax2, Q, xa)
+    ax2.set_title(r'Husimi $Q \geq 0$', fontsize=9)
+    for ax in (ax1, ax2):
+        ax.set_xlabel(r'$x$'); ax.set_ylabel(r'$p$')
+        ax.set_xticks([-5, 0, 5]); ax.set_yticks([-5, 0, 5])
+    ax3.axhline(0, color='0.6', lw=0.4)
+    ax3.fill_between(x_line, W_cut, 0, where=W_cut < 0, color=COLORS['red'], alpha=0.3, lw=0)
+    ax3.plot(x_line, W_cut, color=COLORS['blue'], lw=1.0, label=r'$W(x, 0)$')
+    ax3.plot(x_line, Q_cut, color=COLORS['orange'], lw=1.2, ls=(0, (4, 2)), label=r'$Q(x, 0)$')
+    ax3.set_xlim(-7, 7); ax3.set_ylim(-0.3, 0.34)
+    ax3.set_xlabel(r'$x$')
+    ax3.legend(loc='upper left', fontsize=7.5)
+    ax3.set_title(rf'cut along $p = 0$, $gt = {t_now * g:.1f}$', fontsize=9)
+    frames.append(fig_to_frame(fig, dpi=110))
+    step = t_max / (N_frames - 1)
+    durations.append(1800 if abs(t_now - t_r / 2) < step / 2 else
+                     (1200 if abs(t_now - t_r) < step / 2 else (800 if t_now == 0 else 100)))
+save_gif(frames, ANIM_DIR / 'anim_q_vs_wigner.gif', durations)

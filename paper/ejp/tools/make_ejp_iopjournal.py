@@ -4,39 +4,43 @@ iopjournal.cls template (2024) for the European Journal of Physics.
 Content is preserved verbatim; only markup changes:
   * iopjournal title block: \\articletype, \\title, \\author, \\affil, \\email,
     \\keywords, abstract (no \\maketitle, no short title, no \\submitto)
-  * Figures 1-8 placed after the paragraph that first cites them; Figs. 9-12
-    (uncited in the text) omitted by request
+  * the eight dynamics figures placed after the paragraph that first cites
+    them, as vector PDF at full text width (they are drawn at 153 mm); the four
+    background figures (static Wigner functions, analytic inversion sums,
+    Mollow triplet) and the \\revtexonly{...} sentences that cite them are omitted
   * tables in the template's plain \\hline style
   * \\bm -> \\boldsymbol (amsmath); \\ack{...} and \\data{...} back matter
   * bibliography in IOP numeric style (thebibliography prints its own heading)
 """
-import re, pathlib, sys
-from PIL import Image
+import re, pathlib
 
-ROOT = pathlib.Path('/Users/alanknguyen/Documents/qsol_cqed')
+ROOT = pathlib.Path(__file__).resolve().parents[3]
 SRC = (ROOT / 'paper' / 'qsol_cqed.tex').read_text()
 OUTDIR = ROOT / 'paper' / 'ejp'; OUTDIR.mkdir(exist_ok=True)
 OUT = OUTDIR / 'qsol_cqed_ejp.tex'
-OMIT = {'fig:rabi_collapse_revival', 'fig:wigner_quantum_states', 'fig:wigner_2d_quantum_states', 'fig:mollow_triplet'}
+OMIT = {'fig:rabi_collapse_revival', 'fig:wigner_2d_quantum_states', 'fig:mollow_triplet'}
 
 # ---------------------------------------------------------------- pieces of the source
 abstract = re.search(r'\\begin\{abstract\}\n(.*?)\n\\end\{abstract\}', SRC, re.S).group(1).strip()
 keywords = re.search(r'\\keywords\{((?:[^{}]|\{[^{}]*\})*)\}', SRC).group(1)
-body = SRC.split('\\maketitle', 1)[1].split('\\newpage', 1)[0]
-figpart = SRC.split('\\newpage', 1)[1].split('\\begin{acknowledgments}', 1)[0]
+# main text: from \maketitle to the back matter; the figure environments sit
+# inside it, each before the paragraph that first cites it
+main = SRC.split('\\maketitle', 1)[1].split('\\section*{Data availability}', 1)[0]
+FIG_RE = r'\\begin\{figure\*?\}\[[a-z!]*\](.*?)\\end\{figure\*?\}\n*'
 ack = re.search(r'\\begin\{acknowledgments\}\n(.*?)\n\\end\{acknowledgments\}', SRC, re.S).group(1).strip()
 bibkeys = re.findall(r'\\bibitem\{([^}]*)\}', SRC)
 
 # ---------------------------------------------------------------- figures
 figures = []
-for blk in re.findall(r'\\begin\{figure\*?\}\[t\](.*?)\\end\{figure\*?\}', figpart, re.S):
+for blk in re.findall(FIG_RE, main, re.S):
     fname = re.search(r'\\includegraphics\[[^\]]*\]\{([^}]*)\}', blk).group(1)
     cap = re.search(r'\\caption\{(.*)\}\s*\n\s*\\label\{([^}]*)\}', blk, re.S)
     caption, label = cap.group(1).strip(), cap.group(2)
-    w, h = Image.open(ROOT / 'paper' / 'figures' / fname).size
-    width = r'0.62\textwidth' if h / w > 1.2 else (r'0.85\textwidth' if h / w > 0.75 else r'\textwidth')
-    figures.append(dict(file=fname, caption=caption, label=label, width=width))
-assert len(figures) == 12
+    assert (ROOT / 'paper' / 'figures' / fname).exists(), fname
+    figures.append(dict(file=fname, caption=caption, label=label, width=r'\textwidth'))
+assert len(figures) == 11
+body = re.sub(FIG_RE, '', main, flags=re.S)
+assert '\\begin{figure' not in body
 
 def fig_env(f):
     return ('\\begin{figure}\n\\centering\n'
@@ -48,18 +52,25 @@ def fig_env(f):
 # ---------------------------------------------------------------- body
 body = re.sub(r'%% =+\n%% [^\n]*\n%% =+\n', '', body)
 body = body.replace('\\bm{', '\\boldsymbol{')
+# sentences that cite the figures kept only in the REVTeX version
+body, n_dropped = re.subn(r'\\revtexonly\{(?:[^{}]|\{[^{}]*\})*\}', '', body)
+assert n_dropped == 3 and 'revtexonly' not in body, n_dropped
 
 def convert_table(m):
     blk = m.group(0)
-    blk = blk.replace('\\begin{table}[h]', '\\begin{table}')
-    blk = blk.replace('\\hline\\hline', '\\hline')
+    # REVTeX ruledtabular -> the template's plain \hline style
+    blk = re.sub(r'\\begin\{table\}\[[a-z!]*\]\n', lambda _: '\\begin{table}\n\\centering\n', blk)
+    blk = blk.replace('\\begin{ruledtabular}\n', '').replace('\\end{ruledtabular}\n', '')
+    blk = re.sub(r'(\\begin\{tabular\}\{[^}]*\}\n)', lambda m: m.group(1) + '\\hline\n', blk)
+    blk = blk.replace('\\end{tabular}', '\\hline\n\\end{tabular}')
     # template style: caption above, label after the tabular
     lab = re.search(r'\n\\label\{([^}]*)\}\n', blk).group(1)
     blk = blk.replace(f'\n\\label{{{lab}}}\n', '\n', 1)
     blk = blk.replace('\\end{tabular}\n', f'\\end{{tabular}}\n\\label{{{lab}}}\n', 1)
     return blk
 
-body = re.sub(r'\\begin\{table\}\[h\].*?\\end\{table\}', convert_table, body, flags=re.S)
+body, n_tab = re.subn(r'\\begin\{table\}\[[a-z!]*\].*?\\end\{table\}', convert_table, body, flags=re.S)
+assert n_tab == 2
 
 paras = body.split('\n\n'); placed = set()
 for f in figures:
@@ -74,7 +85,7 @@ body = '\n\n'.join(paras).strip('\n')
 IOP = {
  'rabi1937':   r"Rabi I I 1937 {\it Phys. Rev.} {\bf 51} 652",
  'scully1997': r"Scully M O and Zubairy M S 1997 {\it Quantum Optics} (Cambridge: Cambridge University Press)",
- 'allen1975':  r"Allen L and Eberly J H 1975 {\it Optical Resonance and Two-Level Atoms} (New York: Dover)",
+ 'allen1975':  r"Allen L and Eberly J H 1975 {\it Optical Resonance and Two-Level Atoms} (New York: Wiley)",
  'gerry2004':  r"Gerry C C and Knight P L 2004 {\it Introductory Quantum Optics} (Cambridge: Cambridge University Press)",
  'jaynes1963': r"Jaynes E T and Cummings F W 1963 {\it Proc. IEEE} {\bf 51} 89",
  'eberly1980': r"Eberly J H, Narozhny N B and Sanchez-Mondragon J J 1980 {\it Phys. Rev. Lett.} {\bf 44} 1323",
@@ -85,7 +96,14 @@ IOP = {
  'glauber1963': r"Glauber R J 1963 {\it Phys. Rev.} {\bf 131} 2766",
  'sudarshan1963': r"Sudarshan E C G 1963 {\it Phys. Rev. Lett.} {\bf 10} 277",
  'aasi2013':   r"Aasi J {\it et al} (LIGO Scientific Collaboration) 2013 {\it Nat. Photon.} {\bf 7} 613",
- 'tse2019':    r"Tse M {\it et al} (LIGO Scientific Collaboration) 2019 {\it Phys. Rev. Lett.} {\bf 123} 231107",
+ 'tse2019':    r"Tse M {\it et al} 2019 {\it Phys. Rev. Lett.} {\bf 123} 231107",
+ 'acernese2019': r"Acernese F {\it et al} (Virgo Collaboration) 2019 {\it Phys. Rev. Lett.} {\bf 123} 231108",
+ 'auffeves2003': r"Auff\`{e}ves A, Maioli P, Meunier T, Gleyzes S, Nogues G, Brune M, Raimond J M and Haroche S 2003 {\it Phys. Rev. Lett.} {\bf 91} 230405",
+ 'gleyzes2007': r"Gleyzes S {\it et al} 2007 {\it Nature} {\bf 446} 297",
+ 'guerlin2007': r"Guerlin C {\it et al} 2007 {\it Nature} {\bf 448} 889",
+ 'meunier2005': r"Meunier T {\it et al} 2005 {\it Phys. Rev. Lett.} {\bf 94} 010401",
+ 'gea-banacloche1993': r"Gea-Banacloche J 1993 {\it Phys. Rev.} A {\bf 47} 2221",
+ 'meunier2006': r"Meunier T, Le Diffon A, Ruef C, Degiovanni P and Raimond J-M 2006 {\it Phys. Rev.} A {\bf 74} 033802",
  'wigner1932': r"Wigner E 1932 {\it Phys. Rev.} {\bf 40} 749",
  'hudson1974': r"Hudson R L 1974 {\it Rep. Math. Phys.} {\bf 6} 249",
  'kenfack2004': r"Kenfack A and \.{Z}yczkowski K 2004 {\it J. Opt. B: Quantum Semiclass. Opt.} {\bf 6} 396",
@@ -108,7 +126,8 @@ IOP = {
  'hofheinz2009': r"Hofheinz M, Wang H, Ansmann M, Bialczak R C, Lucero E, Neeley M, O'Connell A D, Sank D, Wenner J, Martinis J M and Cleland A N 2009 {\it Nature} {\bf 459} 546",
  'ofek2016':   r"Ofek N {\it et al} 2016 {\it Nature} {\bf 536} 441",
  'meekhof1996': r"Meekhof D M, Monroe C, King B E, Itano W M and Wineland D J 1996 {\it Phys. Rev. Lett.} {\bf 76} 1796",
- 'walls2008':  r"Walls D F and Milburn G J 2008 {\it Quantum Optics} 2nd edn (Berlin: Springer)",
+ 'knight1982': r"Knight P L and Radmore P M 1982 {\it Phys. Lett.} A {\bf 90} 342",
+ 'brune1996rabi': r"Brune M, Schmidt-Kaler F, Maali A, Dreyer J, Hagley E, Raimond J M and Haroche S 1996 {\it Phys. Rev. Lett.} {\bf 76} 1800",
  'nguyen2026code': r"Nguyen N K 2026 {\it QSOL\_CQED} version 1.1.0 (Zenodo) \url{https://doi.org/10.5281/zenodo.22806076}",
 }
 assert set(bibkeys) == set(IOP)
@@ -123,7 +142,8 @@ doc = f"""% ====================================================================
 % project from the "IOP Publishing" journal template (it ships iopjournal.cls and
 % the orcid icon), replace main.tex with this file, and upload the figures into
 % a folder named figures/.  Content is identical to the REVTeX version.
-% Generated by scratchpad/make_ejp_iopjournal.py from paper/qsol_cqed.tex.
+% Generated by paper/ejp/tools/make_ejp_iopjournal.py from paper/qsol_cqed.tex;
+% edit that source (or the tools), not this file.
 % Options: \\documentclass[anonymous]{{iopjournal}} strips author details,
 % acknowledgments and the data statement for double-anonymous review.
 % ==========================================================================
